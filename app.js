@@ -127,7 +127,7 @@
     const content = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//LifeSafe//V1.10a//EN',
+      'PRODID:-//LifeSafe//V1.10b//EN',
       'BEGIN:VEVENT',
       `UID:${uid}`,
       `DTSTAMP:${dtstamp}`,
@@ -142,29 +142,42 @@
       'END:VEVENT',
       'END:VCALENDAR'
     ].join('\r\n');
-    return content;
+    return {content, fileName: `${(title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'')}-${rec.renewalDate}.ics`};
   }
 
-  // iOS/Safari handling for downloads
-  function isIOS(){ return /iP(ad|hone|od)/.test(navigator.platform) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document); }
-  function isSafari(){ return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
+  // iOS/Safari helpers
+  function isIOS(){
+    return /iP(ad|hone|od)/.test(navigator.userAgent) || 
+           (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+  }
+  function isSafari(){
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  }
 
-  function downloadIcs(rec){
+  async function downloadIcs(rec){
     if(!rec.renewalDate) return;
-    const content = makeIcs(rec);
-    if(!content) return;
-    const titleSlug = (rec.title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'');
-    const fileName = `${titleSlug || 'renewal'}-${rec.renewalDate}.ics`;
+    const made = makeIcs(rec);
+    if(!made) return;
+    const {content, fileName} = made;
 
-    // iOS Safari often blocks Blob downloads + download attribute.
+    // Best UX: Web Share API with File (iOS 15+)
+    try{
+      const supportsFiles = !!(navigator.canShare && navigator.canShare({ files: [new File([""], "a.txt")] }));
+      if(navigator.share && supportsFiles){
+        const file = new File([content], fileName, { type: 'text/calendar' });
+        await navigator.share({ files:[file], title:'Add to Calendar', text: 'LifeSafe renewal reminder' });
+        return;
+      }
+    }catch(e){ /* fall through */ }
+
+    // iOS Safari fallback: open data: URL in a new tab so user can "Open in Calendar"
     if(isIOS() && isSafari()){
       const dataUri = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content);
-      // Open in same tab to trigger "Open in Calendar"
-      window.location.href = dataUri;
+      window.open(dataUri, '_blank', 'noopener');
       return;
     }
 
-    // Other browsers: Blob + download attribute
+    // Default: Blob download
     const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
