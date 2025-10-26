@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LifeSafe</title>
     <link rel="icon" href="favicon.svg" />
-    <link rel="stylesheet" href="styles.css?v=109" />
+    <link rel="stylesheet" href="styles.css?v=110" />
   </head>
   <body>
     <div id="app" class="app">
@@ -15,7 +15,7 @@
         <div class="splash">
           <div class="logo"><img src="favicon.svg" alt="" /></div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.09</div>
+          <div class="version">v1.10</div>
         </div>
       </div>
 
@@ -32,6 +32,7 @@
 
           <!-- Home tab -->
           <section id="homeContent" class="section">
+            <div id="homeBanner" class="banner hidden"></div>
             <button id="addBtnHome" class="btn add full pill">+ Add Record</button>
             <div id="homeHint" class="hint">
               <div class="hintIcon">💡</div>
@@ -40,8 +41,9 @@
             <div id="homeList" class="recordList"></div>
           </section>
 
-          <!-- Vehicles tab (fully enabled in v1.09) -->
+          <!-- Vehicles tab -->
           <section id="vehiclesContent" class="section hidden">
+            <div id="vehiclesBanner" class="banner hidden"></div>
             <button id="addBtnVehicles" class="btn add full pill">+ Add Record</button>
             <div id="vehiclesHint" class="hint">
               <div class="hintIcon">💡</div>
@@ -50,7 +52,7 @@
             <div id="vehiclesList" class="recordList"></div>
           </section>
 
-          <!-- Other tabs (placeholders, to be enabled next) -->
+          <!-- Other tabs (placeholders) -->
           <section id="healthContent" class="section hidden centerText">Empty</section>
           <section id="financeContent" class="section hidden centerText">Empty</section>
           <section id="idsContent" class="section hidden centerText">Empty</section>
@@ -59,7 +61,7 @@
         </main>
       </div>
 
-      <!-- Detail View screen (shared) -->
+      <!-- Detail View screen -->
       <div id="detail" class="phone hidden">
         <div class="statusbar"></div>
         <header class="header detailHeader">
@@ -70,6 +72,7 @@
         <main class="content">
           <div id="detailWrap" class="detailWrap"></div>
           <div class="detailActions">
+            <button id="calendarFromDetail" class="btn ghost pill">Add to Calendar</button>
             <button id="editFromDetail" class="btn ghost pill">Edit</button>
             <button id="deleteFromDetail" class="btn danger pill">Delete</button>
           </div>
@@ -116,6 +119,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=109"></script>
+    <script src="app.js?v=110"></script>
   </body>
 </html>

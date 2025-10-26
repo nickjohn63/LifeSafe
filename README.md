@@ -1,18 +1,14 @@
-# LifeSafe v1.09 (Static, zero-build)
+# LifeSafe v1.10 (Static, zero-build)
 
-**Per-tab record keeping — Phase 1: Vehicles**
+**Renewal alerts (static-friendly)**
 
-What's new:
-- **Vehicles tab** now works the same as Home:
-  - Own **+ Add Record** button
-  - Hint hidden once you add the first item
-  - List of cards with Title, Type, Description, Start/Renewal dates (expired highlight)
-  - Tap a card → **Detail View** (with Edit/Delete)
-  - Edit/Delete also available on the list
-- **LocalStorage** now saves data **per tab** using a single key:
-  - `lifesafe_tabbed_records_v109` storing `{ home:[], vehicles:[], ... }`
-- **Home** continues working as before.
-- Other tabs (**Health, Finance, IDs & Docs, Pets, Other**) remain placeholders for now and will be enabled one-by-one next.
+New in this version:
+- **Due soon** logic: if Renewal Date is within **7 days**, the card shows a yellow **Due soon (Xd)** chip and the tab shows a **banner** ("Heads up: n due within 7 days · m expired").
+- **Expired** renewals remain **red ❗** as before.
+- **Add to Calendar (.ics)** action on each card and in the Detail View:
+  - Creates an all-day event on the renewal date
+  - Includes a **1-week reminder (VALARM)** so your phone/calendar will alert even if the site is closed
+- Keeps per-tab records (Home + Vehicles enabled), LocalStorage persistence.
 
 ## Upload
 1) Open your GitHub repo
@@ -24,7 +20,6 @@ What's new:
    - `README.md`
 3) Settings → Pages → Deploy from branch → `main` / `(root)`
 
-Then open your site and try:
-- Add a record on **Home**
-- Switch to **Vehicles** → add a vehicle-related record (e.g., MOT due date) → it appears under Vehicles only
-- Tap a card → **details** → edit/delete
+Then open your site and test:
+- Add items with Renewal Dates within the next 7 days → see **Due soon** chip + banner
+- Click **Add to Calendar** to download an `.ics` with a **-1 week** alarm

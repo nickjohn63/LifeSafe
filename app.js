@@ -17,18 +17,19 @@
   const tabsEl=document.getElementById('tabs');
   const title=document.getElementById('activeTitle');
 
-  // Home refs
+  // Per-tab refs
   const home={
     root: document.getElementById('homeContent'),
     addBtn: document.getElementById('addBtnHome'),
     hint: document.getElementById('homeHint'),
+    banner: document.getElementById('homeBanner'),
     list: document.getElementById('homeList')
   };
-  // Vehicles refs
   const vehicles={
     root: document.getElementById('vehiclesContent'),
     addBtn: document.getElementById('addBtnVehicles'),
     hint: document.getElementById('vehiclesHint'),
+    banner: document.getElementById('vehiclesBanner'),
     list: document.getElementById('vehiclesList')
   };
 
@@ -37,6 +38,7 @@
   const backBtn=document.getElementById('backBtn');
   const editFromDetail=document.getElementById('editFromDetail');
   const deleteFromDetail=document.getElementById('deleteFromDetail');
+  const calendarFromDetail=document.getElementById('calendarFromDetail');
 
   // Modal
   const overlay=document.getElementById('overlay');
@@ -51,7 +53,7 @@
   const modalTitle=document.getElementById('modalTitle');
 
   // Storage
-  const STORAGE_KEY='lifesafe_tabbed_records_v109';
+  const STORAGE_KEY='lifesafe_tabbed_records_v109'; // unchanged
   let data={
     home: [],
     vehicles: [],
@@ -81,16 +83,80 @@
     if(!val) return '';
     try{ const d=new Date(val+'T00:00:00'); return d.toLocaleDateString(); }catch(e){ return val; }
   }
-  function isPast(val){
-    if(!val) return false;
+  function daysUntil(val){
+    if(!val) return Infinity;
     const today=new Date(); today.setHours(0,0,0,0);
     const d=new Date(val+'T00:00:00');
-    return d < today;
+    return Math.floor((d - today)/(1000*60*60*24));
   }
+  function isPast(val){ return daysUntil(val) < 0; }
+  function isDueSoon(val){ const n=daysUntil(val); return n>=0 && n<=7; }
+
   function toggleHintFor(tabId){
     const arr=data[tabId]||[];
     if(tabId==='home' && home.hint){ home.hint.classList.toggle('hidden', arr.length>0); }
     if(tabId==='vehicles' && vehicles.hint){ vehicles.hint.classList.toggle('hidden', arr.length>0); }
+  }
+  function updateBanner(tabId){
+    const arr=data[tabId]||[];
+    const soon = arr.filter(r=>isDueSoon(r.renewalDate)).length;
+    const exp  = arr.filter(r=>isPast(r.renewalDate)).length;
+    const el = tabId==='home'? home.banner : tabId==='vehicles'? vehicles.banner : null;
+    if(!el) return;
+    if(soon>0 || exp>0){
+      const parts=[];
+      if(soon>0) parts.push(`${soon} due within 7 days`);
+      if(exp>0) parts.push(`${exp} expired`);
+      el.textContent = `Heads up: ` + parts.join(" · ");
+      el.classList.remove('hidden');
+    }else{
+      el.classList.add('hidden');
+      el.textContent='';
+    }
+  }
+
+  function makeIcs(rec){
+    const title = rec.title || 'LifeSafe Renewal';
+    const desc = (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||'');
+    const dt = rec.renewalDate; // YYYY-MM-DD
+    if(!dt) return null;
+    // All-day event
+    const dtstamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+    const dtstart = dt.replace(/-/g,''); // YYYYMMDD
+    const uid = `${dtstart}-${rec.id||''}-lifesafe`;
+    const content = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//LifeSafe//V1.10//EN',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${dtstamp}`,
+      `DTSTART;VALUE=DATE:${dtstart}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${desc}`,
+      'BEGIN:VALARM',
+      'TRIGGER:-P1W',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Renewal due soon',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\\r\\n');
+    return content;
+  }
+
+  function downloadIcs(rec){
+    if(!rec.renewalDate) return;
+    const titleSlug = (rec.title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'');
+    const fileName = `${titleSlug || 'renewal'}-${rec.renewalDate}.ics`;
+    const content = makeIcs(rec);
+    if(!content) return;
+    const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
   }
 
   // Rendering
@@ -100,6 +166,7 @@
     if(!container) return;
     container.innerHTML='';
     toggleHintFor(tabId);
+    updateBanner(tabId);
     if(arr.length===0){
       const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
       container.appendChild(empty); return;
@@ -114,6 +181,11 @@
       const meta=document.createElement('div'); meta.className='meta';
       const badge=document.createElement('span'); badge.className='badge'; badge.textContent=rec.type || 'General';
       meta.appendChild(badge);
+      // due soon chip
+      if(isDueSoon(rec.renewalDate)){
+        const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${daysUntil(rec.renewalDate)}d)`;
+        meta.appendChild(chip);
+      }
       const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc || '';
 
       const dates=document.createElement('div'); dates.className='dates';
@@ -124,12 +196,15 @@
         dates.appendChild(ln2);
       }
 
+      const calBtn=document.createElement('button'); calBtn.className='btn small ghost'; calBtn.textContent='Add to Calendar';
+      calBtn.onclick=(e)=>{ e.stopPropagation(); downloadIcs(rec); };
+
       const editBtn=document.createElement('button'); editBtn.className='btn small ghost'; editBtn.textContent='Edit';
       editBtn.onclick=(e)=>{ e.stopPropagation(); startEdit(tabId, rec.id); };
       const delBtn=document.createElement('button'); delBtn.className='btn small danger'; delBtn.textContent='Delete';
       delBtn.onclick=(e)=>{ e.stopPropagation(); remove(tabId, rec.id); };
 
-      right.appendChild(editBtn); right.appendChild(delBtn);
+      right.appendChild(calBtn); right.appendChild(editBtn); right.appendChild(delBtn);
       left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d); if(rec.startDate||rec.renewalDate) left.appendChild(dates);
       top.appendChild(left); top.appendChild(right);
       card.appendChild(top);
@@ -139,9 +214,7 @@
     });
   }
 
-  function renderActiveTab(){
-    renderList(activeTab);
-  }
+  function renderActiveTab(){ renderList(activeTab); }
 
   // Tabs UI
   tabs.forEach(t=>{
@@ -170,7 +243,7 @@
   setTimeout(()=>{ splash.classList.add('hidden'); main.classList.remove('hidden'); }, 800);
 
   // Modal
-  function openModal(mode='add', presetTab=activeTab){
+  function openModal(mode='add'){
     overlay.classList.remove('hidden'); modal.classList.remove('hidden');
     requestAnimationFrame(()=>{ overlay.classList.add('show'); modal.classList.add('show'); });
     if(mode==='add'){
@@ -202,11 +275,12 @@
     data[tabId]=(data[tabId]||[]).filter(r=>r.id!==id);
     save(); renderList(tabId);
     if(viewing.tab===tabId && viewing.id===id){ showMain(); }
+    updateBanner(tabId);
   }
 
   // Add buttons per tab
-  home.addBtn.addEventListener('click', ()=>openModal('add','home'));
-  vehicles.addBtn.addEventListener('click', ()=>openModal('add','vehicles'));
+  home.addBtn.addEventListener('click', ()=>openModal('add'));
+  vehicles.addBtn.addEventListener('click', ()=>openModal('add'));
 
   closeBtn.addEventListener('click', closeModal);
   overlay.addEventListener('click', closeModal);
@@ -231,7 +305,7 @@
       const id = Date.now().toString(36);
       data[activeTab]=[ { id, ...payload }, ...(data[activeTab]||[]) ];
     }
-    save(); renderList(activeTab); closeModal();
+    save(); renderList(activeTab); updateBanner(activeTab); closeModal();
   });
 
   // Detail view
@@ -245,18 +319,25 @@
     detailWrap.innerHTML='';
     const card=document.createElement('div'); card.className='detailCard';
     const titleEl=document.createElement('h3'); titleEl.className='detailTitle'; titleEl.textContent=rec.title||'(Untitled)';
-    const meta=document.createElement('div'); meta.className='detailMeta'; meta.textContent=(rec.type||'General')+' • '+tabId[0].toUpperCase()+tabId.slice(1);
+    const meta=document.createElement('div'); meta.className='detailMeta';
+    meta.textContent=(rec.type||'General')+' • '+tabId[0].toUpperCase()+tabId.slice(1);
     const desc=document.createElement('div'); desc.className='detailDesc'; desc.textContent=rec.desc||'';
     const dates=document.createElement('div'); dates.className='detailDates';
     if(rec.startDate){ dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start Date: '+formatDate(rec.startDate)})); }
     if(rec.renewalDate){
-      const ln=document.createElement('div'); ln.textContent='Renewal Date: '+formatDate(rec.renewalDate) + (isPast(rec.renewalDate)?'  ❗':'');
-      if(isPast(rec.renewalDate)) ln.classList.add('expired');
+      const n = daysUntil(rec.renewalDate);
+      const ln=document.createElement('div'); ln.textContent='Renewal Date: '+formatDate(rec.renewalDate);
+      if(n>=0 && n<=7){ ln.textContent += `  (due in ${n}d)`; }
+      if(n<0){ ln.textContent += '  ❗'; ln.classList.add('expired'); }
       dates.appendChild(ln);
     }
     card.appendChild(titleEl); card.appendChild(meta); if(desc.textContent) card.appendChild(desc); if(rec.startDate||rec.renewalDate) card.appendChild(dates);
     detailWrap.appendChild(card);
+
+    // Wire up calendar button
+    calendarFromDetail.onclick=()=>downloadIcs(rec);
   }
+
   function showDetail(){ main.classList.add('hidden'); detail.classList.remove('hidden'); }
   function showMain(){ detail.classList.add('hidden'); detailWrap.innerHTML=''; viewing={tab:null,id:null}; main.classList.remove('hidden'); }
 
@@ -266,9 +347,7 @@
 
   // Init
   load();
-  // Build tabs UI state and render initial
-  tabs.forEach(t=>{ if(t.id==='home') document.getElementById(t.content).classList.remove('hidden'); });
-  // Toggle hints on first load
-  ['home','vehicles'].forEach(toggleHintFor);
-  renderList('home'); // Home first
+  // First render
+  ['home','vehicles'].forEach(id=>{ toggleHintFor(id); updateBanner(id); });
+  renderList('home');
 })();
