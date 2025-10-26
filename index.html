@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LifeSafe</title>
     <link rel="icon" href="favicon.svg" />
-    <link rel="stylesheet" href="styles.css?v=106" />
+    <link rel="stylesheet" href="styles.css?v=107" />
   </head>
   <body>
     <div id="app" class="app">
@@ -15,11 +15,11 @@
         <div class="splash">
           <div class="logo"><img src="favicon.svg" alt="" /></div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.06</div>
+          <div class="version">v1.07</div>
         </div>
       </div>
 
-      <!-- Main app -->
+      <!-- Main app (List/Home) -->
       <div id="main" class="phone hidden">
         <div class="statusbar"></div>
         <header class="header">
@@ -47,6 +47,25 @@
           <section id="idsContent" class="section hidden centerText">Empty</section>
           <section id="petsContent" class="section hidden centerText">Empty</section>
           <section id="otherContent" class="section hidden centerText">Empty</section>
+        </main>
+      </div>
+
+      <!-- Detail View screen -->
+      <div id="detail" class="phone hidden">
+        <div class="statusbar"></div>
+        <header class="header detailHeader">
+          <button id="backBtn" class="iconBtn backBtn" aria-label="Back">←</button>
+          <div class="title">Details</div>
+          <div style="width:36px;"></div>
+        </header>
+        <main class="content">
+          <div id="detailWrap" class="detailWrap">
+            <!-- Populated dynamically -->
+          </div>
+          <div class="detailActions">
+            <button id="editFromDetail" class="btn ghost pill">Edit</button>
+            <button id="deleteFromDetail" class="btn danger pill">Delete</button>
+          </div>
         </main>
       </div>
     </div>
@@ -90,6 +109,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=106"></script>
+    <script src="app.js?v=107"></script>
   </body>
 </html>

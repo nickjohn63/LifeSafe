@@ -11,42 +11,41 @@
 
   const splash=document.getElementById('splash');
   const main=document.getElementById('main');
+  const detail=document.getElementById('detail');
   const tabsEl=document.getElementById('tabs');
   const title=document.getElementById('activeTitle');
   const listEl=document.getElementById('homeList');
+  const detailWrap=document.getElementById('detailWrap');
+  const backBtn=document.getElementById('backBtn');
+  const editFromDetail=document.getElementById('editFromDetail');
+  const deleteFromDetail=document.getElementById('deleteFromDetail');
 
-  const STORAGE_KEY='lifesafe_records_v105'; // keep same to preserve earlier data
+  const STORAGE_KEY='lifesafe_records_v105'; // keep same to preserve existing data
 
   // Helpers
   function formatDate(val){
     if(!val) return '';
-    try{
-      const d = new Date(val + 'T00:00:00');
-      return d.toLocaleDateString();
-    }catch(e){ return val; }
+    try{ const d=new Date(val+'T00:00:00'); return d.toLocaleDateString(); }catch(e){ return val; }
   }
   function isPast(val){
     if(!val) return false;
     const today=new Date(); today.setHours(0,0,0,0);
-    const d=new Date(val + 'T00:00:00');
+    const d=new Date(val+'T00:00:00');
     return d < today;
   }
 
-  // Records load/save
+  // Records
   let records=[]; // {id,title,type,desc,startDate,renewalDate,createdAt}
   function load(){
-    try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ records=JSON.parse(raw)||[]; } }catch(e){ records=[]; }
+    try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) records=JSON.parse(raw)||[]; }catch(e){ records=[]; }
   }
   function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }catch(e){} }
 
   function renderList(){
     listEl.innerHTML='';
     if(records.length===0){
-      const empty=document.createElement('div');
-      empty.className='centerText';
-      empty.textContent='No records yet';
-      listEl.appendChild(empty);
-      return;
+      const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
+      listEl.appendChild(empty); return;
     }
     records.forEach(rec=>{
       const card=document.createElement('div'); card.className='card';
@@ -60,30 +59,25 @@
       meta.appendChild(badge);
       const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc || '';
 
-      // Dates area
       const dates=document.createElement('div'); dates.className='dates';
-      if(rec.startDate){ 
-        const ln=document.createElement('div'); ln.textContent='Start: ' + formatDate(rec.startDate); dates.appendChild(ln);
-      }
+      if(rec.startDate){ dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start: '+formatDate(rec.startDate)})); }
       if(rec.renewalDate){
-        const ln2=document.createElement('div'); 
-        ln2.textContent='Renewal: ' + formatDate(rec.renewalDate) + (isPast(rec.renewalDate) ? '  ❗' : '');
+        const ln2=document.createElement('div'); ln2.textContent='Renewal: '+formatDate(rec.renewalDate) + (isPast(rec.renewalDate)?'  ❗':'');
         if(isPast(rec.renewalDate)) ln2.classList.add('expired');
         dates.appendChild(ln2);
       }
 
-      // Actions
       const editBtn=document.createElement('button'); editBtn.className='btn small ghost'; editBtn.textContent='Edit';
-      editBtn.onclick=()=>startEdit(rec.id);
+      editBtn.onclick=(e)=>{ e.stopPropagation(); startEdit(rec.id); };
       const delBtn=document.createElement('button'); delBtn.className='btn small danger'; delBtn.textContent='Delete';
-      delBtn.onclick=()=>remove(rec.id);
+      delBtn.onclick=(e)=>{ e.stopPropagation(); remove(rec.id); };
 
       right.appendChild(editBtn); right.appendChild(delBtn);
-      left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d);
-      if(rec.startDate || rec.renewalDate) left.appendChild(dates);
+      left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d); if(rec.startDate||rec.renewalDate) left.appendChild(dates);
       top.appendChild(left); top.appendChild(right);
       card.appendChild(top);
 
+      card.addEventListener('click', ()=>openDetail(rec.id));
       listEl.appendChild(card);
     });
   }
@@ -91,8 +85,7 @@
   // Build tabs
   tabs.forEach(t=>{
     const b=document.createElement('button');
-    b.id='tab-'+t.id;
-    b.textContent=t.label;
+    b.id='tab-'+t.id; b.textContent=t.label;
     b.onclick=()=>switchTab(t.id);
     if(t.id==='home') b.classList.add('active');
     tabsEl.appendChild(b);
@@ -103,8 +96,7 @@
       document.getElementById(t.content).classList.add('hidden');
       document.getElementById('tab-'+t.id).classList.remove('active');
     });
-    const t=tabs.find(x=>x.id===id);
-    if(!t) return;
+    const t=tabs.find(x=>x.id===id); if(!t) return;
     document.getElementById(t.content).classList.remove('hidden');
     document.getElementById('tab-'+t.id).classList.add('active');
     title.textContent=t.label;
@@ -127,14 +119,13 @@
   const modalTitle=document.getElementById('modalTitle');
 
   let editingId=null;
+  let viewingId=null;
 
   function openModal(mode='add'){
-    overlay.classList.remove('hidden');
-    modal.classList.remove('hidden');
+    overlay.classList.remove('hidden'); modal.classList.remove('hidden');
     requestAnimationFrame(()=>{ overlay.classList.add('show'); modal.classList.add('show'); });
     if(mode==='add'){
-      modalTitle.textContent='Add Record';
-      saveBtn.textContent='Save';
+      modalTitle.textContent='Add Record'; saveBtn.textContent='Save';
       fTitle.value=''; fType.value=''; fDesc.value=''; fStart.value=''; fRenewal.value='';
       editingId=null;
     }
@@ -148,20 +139,17 @@
   function startEdit(id){
     const rec=records.find(r=>r.id===id); if(!rec) return;
     editingId=id;
-    modalTitle.textContent='Edit Record';
-    saveBtn.textContent='Save changes';
-    fTitle.value=rec.title||''; 
-    fType.value=rec.type||''; 
-    fDesc.value=rec.desc||'';
-    fStart.value=rec.startDate||'';
-    fRenewal.value=rec.renewalDate||'';
+    modalTitle.textContent='Edit Record'; saveBtn.textContent='Save changes';
+    fTitle.value=rec.title||''; fType.value=rec.type||''; fDesc.value=rec.desc||'';
+    fStart.value=rec.startDate||''; fRenewal.value=rec.renewalDate||'';
     openModal('edit');
   }
 
   function remove(id){
     if(!confirm('Delete this record?')) return;
-    records = records.filter(r=>r.id!==id);
-    save(); renderList();
+    records = records.filter(r=>r.id!==id); save(); renderList();
+    // if deleting from detail view, go back
+    if(viewingId===id){ showMain(); }
   }
 
   addBtn.addEventListener('click', ()=>openModal('add'));
@@ -180,11 +168,51 @@
     if(editingId){
       const idx=records.findIndex(r=>r.id===editingId);
       if(idx>-1){ records[idx]={...records[idx], ...payload}; }
+      // if editing from detail view, refresh detail too
+      if(viewingId===editingId){ renderDetail(records[idx]); }
     }else{
-      records.unshift({ id: Date.now().toString(36), createdAt: new Date().toISOString(), ...payload });
+      const id = Date.now().toString(36);
+      records.unshift({ id, createdAt: new Date().toISOString(), ...payload });
+      // open detail for the new record?
     }
     save(); renderList(); closeModal();
   });
+
+  // Detail view
+  function openDetail(id){
+    viewingId=id;
+    const rec=records.find(r=>r.id===id); if(!rec) return;
+    renderDetail(rec);
+    showDetail();
+  }
+  function renderDetail(rec){
+    detailWrap.innerHTML='';
+    const card=document.createElement('div'); card.className='detailCard';
+    const titleEl=document.createElement('h3'); titleEl.className='detailTitle'; titleEl.textContent=rec.title||'(Untitled)';
+    const meta=document.createElement('div'); meta.className='detailMeta'; meta.textContent=rec.type || 'General';
+    const desc=document.createElement('div'); desc.className='detailDesc'; desc.textContent=rec.desc||'';
+    const dates=document.createElement('div'); dates.className='detailDates';
+    if(rec.startDate){ dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start Date: '+formatDate(rec.startDate)})); }
+    if(rec.renewalDate){ 
+      const ln=document.createElement('div');
+      ln.textContent='Renewal Date: '+formatDate(rec.renewalDate) + (isPast(rec.renewalDate)?'  ❗':'');
+      if(isPast(rec.renewalDate)) ln.classList.add('expired');
+      dates.appendChild(ln);
+    }
+
+    card.appendChild(titleEl);
+    card.appendChild(meta);
+    if(desc.textContent) card.appendChild(desc);
+    if(rec.startDate || rec.renewalDate) card.appendChild(dates);
+    detailWrap.appendChild(card);
+  }
+
+  function showDetail(){ main.classList.add('hidden'); detail.classList.remove('hidden'); }
+  function showMain(){ detail.classList.add('hidden'); detailWrap.innerHTML=''; viewingId=null; main.classList.remove('hidden'); }
+
+  backBtn.addEventListener('click', showMain);
+  editFromDetail.addEventListener('click', ()=>{ if(viewingId) startEdit(viewingId); });
+  deleteFromDetail.addEventListener('click', ()=>{ if(viewingId) remove(viewingId); });
 
   // Init
   load(); renderList();

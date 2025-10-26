@@ -1,14 +1,12 @@
-# LifeSafe v1.06 (Static, zero-build)
+# LifeSafe v1.07 (Static, zero-build)
 
-Adds **date fields** + expiry highlighting.
-
-## New
-- **Start Date** and **Renewal Date** in Add/Edit popup (both optional, standard date pickers)
-- Dates are **shown on cards** under the description:
-  - `Start: dd/mm/yyyy`
-  - `Renewal: dd/mm/yyyy` (turns **red** with ❗ if the date is in the past)
-- Records continue to **persist in LocalStorage** (same key as v1.05). 
-- You can still **Edit** and **Delete** records.
+Adds a **Detail View screen**:
+- Tap any card → opens a dedicated **Details** page
+- Shows Title, Type, Description, Start Date, Renewal Date (with expired highlight)
+- Buttons at bottom: **Edit** and **Delete**
+- Back button to return to the Home list
+- Edit/Delete also still work from the list
+- Data persists in **LocalStorage** (same key as v1.05/1.06)
 
 ## Upload
 1) Open your GitHub repo
@@ -20,4 +18,4 @@ Adds **date fields** + expiry highlighting.
    - README.md
 3) Settings → Pages → Deploy from branch → `main` / `(root)`
 
-Then open your site and add a record with dates to see them on the card.
+Then open your site, add a record, and **tap the card** to see the detail view.
