@@ -25,7 +25,7 @@ body {
   overflow: hidden;
   border: 1px solid #e2e8f0;
 }
-.hidden{ display:none; }
+.hidden{ display:none !important; }
 .statusbar { height: 16px; }
 .splash { padding: 56px 24px 72px; text-align:center; }
 .logo {
@@ -65,8 +65,10 @@ h1 { margin: 0; font-size: 28px; letter-spacing: 0.3px; }
 .content { padding: 18px 16px 32px; min-height: 420px; background: linear-gradient(180deg,#ffffff, #f5f7fb); }
 .homeTitle { font-size: 22px; font-weight: 700; margin: 6px 0 14px; }
 
-.homeSection { display:flex; flex-direction: column; gap: 12px; }
+.section { display:flex; flex-direction: column; gap: 12px; }
+.placeholderText { font-size:14px; color: var(--muted); }
 
+/* Buttons */
 .btn {
   appearance: none; border: 0; cursor: pointer; font-weight: 800;
   padding: 16px 18px; font-size: 20px; border-radius: 12px; transition: transform .02s ease, background .2s ease;
@@ -77,6 +79,7 @@ h1 { margin: 0; font-size: 28px; letter-spacing: 0.3px; }
 .btn.add:hover { background: var(--blue-pressed); }
 .btn.pill { border-radius: 999px; }
 
+/* Hint */
 .hint {
   display:flex; align-items: center; gap: 8px;
   background: #f1f5ff; border: 1px dashed #c8d6ff; color: #27407f;
@@ -85,6 +88,7 @@ h1 { margin: 0; font-size: 28px; letter-spacing: 0.3px; }
 .hintIcon { font-size: 16px; }
 .hintText { font-size: 14px; }
 
+/* Placeholder list area */
 .list.placeholder {
   min-height: 120px;
   border: 2px dashed #e2e8f0;

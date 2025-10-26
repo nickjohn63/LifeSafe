@@ -10,7 +10,7 @@
   ];
 
   const splash = document.getElementById('splash');
-  const appPhone = document.getElementById('home');
+  const phone = document.getElementById('homePhone');
   const tabsEl = document.getElementById('tabs');
   const activeTitle = document.getElementById('activeTitle');
 
@@ -30,10 +30,10 @@
     const item = TABS.find(t=>t.id===id);
     activeTitle.textContent = item.label;
 
-    // toggle tab button active state
+    // toggle tab button state
     TABS.forEach(t => t._btn.classList.toggle('active', t.id===id));
 
-    // show/hide content sections
+    // hide all sections, show only active
     TABS.forEach(t => {
       const el = document.getElementById(t.contentId);
       if(!el) return;
@@ -45,14 +45,13 @@
   // Splash → App
   setTimeout(() => {
     splash.classList.add('hidden');
-    appPhone.classList.remove('hidden');
+    phone.classList.remove('hidden');
+    setActive('home'); // ensure initial state is consistent
   }, 900);
 
-  // Wire the Add Record button (placeholder)
-  const addBtn = document.getElementById('addBtn');
-  if(addBtn){
-    addBtn.addEventListener('click', () => {
-      addBtn.blur();
-    });
+  // Wire the Home Add Record button (placeholder only)
+  const addBtnHome = document.getElementById('addBtnHome');
+  if(addBtnHome){
+    addBtnHome.addEventListener('click', () => addBtnHome.blur());
   }
 })();
