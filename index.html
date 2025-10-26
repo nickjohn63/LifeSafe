@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LifeSafe</title>
     <link rel="icon" href="favicon.svg" />
-    <link rel="stylesheet" href="styles.css?v=108" />
+    <link rel="stylesheet" href="styles.css?v=109" />
   </head>
   <body>
     <div id="app" class="app">
@@ -15,11 +15,11 @@
         <div class="splash">
           <div class="logo"><img src="favicon.svg" alt="" /></div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.08</div>
+          <div class="version">v1.09</div>
         </div>
       </div>
 
-      <!-- Main app (List/Home) -->
+      <!-- Main app (List per tab) -->
       <div id="main" class="phone hidden">
         <div class="statusbar"></div>
         <header class="header">
@@ -40,8 +40,17 @@
             <div id="homeList" class="recordList"></div>
           </section>
 
-          <!-- Other tabs (centered 'Empty') -->
-          <section id="vehiclesContent" class="section hidden centerText">Empty</section>
+          <!-- Vehicles tab (fully enabled in v1.09) -->
+          <section id="vehiclesContent" class="section hidden">
+            <button id="addBtnVehicles" class="btn add full pill">+ Add Record</button>
+            <div id="vehiclesHint" class="hint">
+              <div class="hintIcon">💡</div>
+              <div class="hintText">Add your first vehicle item — e.g., MOT, Tax, Insurance</div>
+            </div>
+            <div id="vehiclesList" class="recordList"></div>
+          </section>
+
+          <!-- Other tabs (placeholders, to be enabled next) -->
           <section id="healthContent" class="section hidden centerText">Empty</section>
           <section id="financeContent" class="section hidden centerText">Empty</section>
           <section id="idsContent" class="section hidden centerText">Empty</section>
@@ -50,7 +59,7 @@
         </main>
       </div>
 
-      <!-- Detail View screen -->
+      <!-- Detail View screen (shared) -->
       <div id="detail" class="phone hidden">
         <div class="statusbar"></div>
         <header class="header detailHeader">
@@ -78,12 +87,12 @@
       <div class="modalBody">
         <label class="field">
           <span class="label">Title</span>
-          <input id="fTitle" class="input" type="text" placeholder="e.g., Home Insurance – Aviva" />
+          <input id="fTitle" class="input" type="text" placeholder="e.g., Car Insurance – Aviva" />
         </label>
 
         <label class="field">
           <span class="label">Type</span>
-          <input id="fType" class="input" type="text" placeholder="e.g., Insurance, Council Tax, MOT" />
+          <input id="fType" class="input" type="text" placeholder="e.g., Insurance, MOT, Tax" />
         </label>
 
         <label class="field">
@@ -107,6 +116,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=108"></script>
+    <script src="app.js?v=109"></script>
   </body>
 </html>
