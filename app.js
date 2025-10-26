@@ -15,34 +15,47 @@
   const title=document.getElementById('activeTitle');
   const listEl=document.getElementById('homeList');
 
-  // In-memory records (V1.04)
-  const records=[]; // {id,title,type,desc,createdAt}
+  const STORAGE_KEY='lifesafe_records_v105';
+
+  // Records load/save
+  let records=[]; // {id,title,type,desc,createdAt}
+  function load(){
+    try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ records=JSON.parse(raw)||[]; } }catch(e){ records=[]; }
+  }
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }catch(e){} }
 
   function renderList(){
     listEl.innerHTML='';
     if(records.length===0){
-      // keep helper visible
+      const empty=document.createElement('div');
+      empty.className='centerText';
+      empty.textContent='No records yet';
+      listEl.appendChild(empty);
       return;
     }
     records.forEach(rec=>{
-      const card=document.createElement('div');
-      card.className='card';
-      const h=document.createElement('h3');
-      h.className='cardTitle';
-      h.textContent=rec.title || '(Untitled)';
-      const meta=document.createElement('div');
-      meta.className='meta';
-      const badge=document.createElement('span');
-      badge.className='badge';
-      badge.textContent=rec.type || 'General';
-      meta.appendChild(badge);
-      const d=document.createElement('div');
-      d.className='desc';
-      d.textContent=rec.desc || '';
+      const card=document.createElement('div'); card.className='card';
+      const top=document.createElement('div'); top.className='cardTop';
+      const left=document.createElement('div');
+      const right=document.createElement('div'); right.className='actions';
 
-      card.appendChild(h);
-      card.appendChild(meta);
-      if(d.textContent) card.appendChild(d);
+      const h=document.createElement('h3'); h.className='cardTitle'; h.textContent=rec.title || '(Untitled)';
+      const meta=document.createElement('div'); meta.className='meta';
+      const badge=document.createElement('span'); badge.className='badge'; badge.textContent=rec.type || 'General';
+      meta.appendChild(badge);
+      const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc || '';
+
+      // Actions
+      const editBtn=document.createElement('button'); editBtn.className='btn small ghost'; editBtn.textContent='Edit';
+      editBtn.onclick=()=>startEdit(rec.id);
+      const delBtn=document.createElement('button'); delBtn.className='btn small danger'; delBtn.textContent='Delete';
+      delBtn.onclick=()=>remove(rec.id);
+
+      right.appendChild(editBtn); right.appendChild(delBtn);
+      left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d);
+      top.appendChild(left); top.appendChild(right);
+      card.appendChild(top);
+
       listEl.appendChild(card);
     });
   }
@@ -80,43 +93,63 @@
   const fTitle=document.getElementById('fTitle');
   const fType=document.getElementById('fType');
   const fDesc=document.getElementById('fDesc');
+  const saveBtn=document.getElementById('saveRecord');
+  const modalTitle=document.getElementById('modalTitle');
 
-  function openModal(){
+  let editingId=null;
+
+  function openModal(mode='add'){
     overlay.classList.remove('hidden');
     modal.classList.remove('hidden');
     requestAnimationFrame(()=>{ overlay.classList.add('show'); modal.classList.add('show'); });
+    if(mode==='add'){
+      modalTitle.textContent='Add Record';
+      saveBtn.textContent='Save';
+      fTitle.value=''; fType.value=''; fDesc.value='';
+      editingId=null;
+    }
     fTitle.focus();
   }
   function closeModal(){
-    overlay.classList.remove('show');
-    modal.classList.remove('show');
+    overlay.classList.remove('show'); modal.classList.remove('show');
     setTimeout(()=>{ overlay.classList.add('hidden'); modal.classList.add('hidden'); }, 180);
   }
-  function clearForm(){
-    fTitle.value=''; fType.value=''; fDesc.value='';
+
+  function startEdit(id){
+    const rec=records.find(r=>r.id===id); if(!rec) return;
+    editingId=id;
+    modalTitle.textContent='Edit Record';
+    saveBtn.textContent='Save changes';
+    fTitle.value=rec.title||''; fType.value=rec.type||''; fDesc.value=rec.desc||'';
+    openModal('edit');
   }
 
-  addBtn.addEventListener('click', openModal);
-  closeBtn.addEventListener('click', ()=>{ closeModal(); });
+  function remove(id){
+    if(!confirm('Delete this record?')) return;
+    records = records.filter(r=>r.id!==id);
+    save(); renderList();
+  }
+
+  addBtn.addEventListener('click', ()=>openModal('add'));
+  closeBtn.addEventListener('click', closeModal);
   overlay.addEventListener('click', closeModal);
 
-  // Save -> push to in-memory list and render
-  document.getElementById('saveRecord').addEventListener('click', ()=>{
-    const rec={
-      id: Date.now().toString(36),
+  // Save (add or edit)
+  saveBtn.addEventListener('click', ()=>{
+    const payload={
       title: fTitle.value.trim(),
       type: fType.value.trim(),
-      desc: fDesc.value.trim(),
-      createdAt: new Date().toISOString()
+      desc: fDesc.value.trim()
     };
-    records.unshift(rec); // newest first
-    renderList();
-    clearForm();
-    closeModal();
-    // Scroll to top of list to show the new item
-    listEl.scrollIntoView({behavior:'smooth', block:'start'});
+    if(editingId){
+      const idx=records.findIndex(r=>r.id===editingId);
+      if(idx>-1){ records[idx]={...records[idx], ...payload}; }
+    }else{
+      records.unshift({ id: Date.now().toString(36), createdAt: new Date().toISOString(), ...payload });
+    }
+    save(); renderList(); closeModal();
   });
 
-  // Initial render
-  renderList();
+  // Init
+  load(); renderList();
 })();

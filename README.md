@@ -1,10 +1,12 @@
-# LifeSafe v1.04 (Static, zero-build)
+# LifeSafe v1.05 (Static, zero-build)
 
-Adds **in‑memory save**:
-- Clicking **Save** creates a record in a temporary array
-- The record appears as a **card** in the Home list
-- No persistence yet (refresh clears) — that’s for V1.05 (LocalStorage)
-- Slide-up modal, dim blur overlay, sticky Save button remain
+**Edit + Delete + Persistence**
+
+What's new:
+- Tap **Edit** on a card → opens popup pre-filled → **Save changes**
+- Tap **Delete** → confirm → removes the card
+- Records are now **saved to LocalStorage** (survive refresh)
+- Splash shows v1.05
 
 ## Upload
 1) Open your GitHub repo
@@ -16,4 +18,8 @@ Adds **in‑memory save**:
    - README.md
 3) Settings → Pages → Deploy from branch → `main` / `(root)`
 
-Then open your site and try **+ Add Record → Save**.
+Then open your site and try:
+- **Add Record** → Save → see card
+- **Edit** → change fields → Save changes
+- **Delete** → confirm → removed
+- Refresh page → cards remain (LocalStorage)
