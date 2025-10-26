@@ -1,12 +1,18 @@
-# LifeSafe v1.01 (Static, zero‑build)
+# LifeSafe v1.02 (Static, zero-build)
 
-This package is **pure HTML/CSS/JS** — no Node, no Vite, no build steps.
-Upload these files directly to GitHub and enable **Pages**. It will just work.
+Pure HTML/CSS/JS — upload these files directly to GitHub (no Node/Vite/Actions).
+
+## What's new in V1.02
+- Home tab now shows content:
+  - **Large full-width blue** “+ Add Record” button (pill shape)
+  - 💡 Helper message: “Start organising your life — add your first record”
+  - Placeholder list area
+- Tabs switch content sections (Home/other tabs are placeholders for now)
+- Splash shows **v1.02**
 
 ## Upload to GitHub
-
-1. Create a new repo (e.g., `LifeSafe`).
-2. **Add file → Upload files**, and upload everything from this folder:
+1. Create a repo (e.g., `LifeSafe`).
+2. **Add file → Upload files**, and upload everything in this folder:
    - `index.html`
    - `styles.css`
    - `app.js`
@@ -15,16 +21,10 @@ Upload these files directly to GitHub and enable **Pages**. It will just work.
 3. Commit.
 
 ### Enable Pages
-- Go to **Settings → Pages**.
-- Set **Source: Deploy from a branch**.
-- **Branch:** `main` • **Folder:** `/ (root)`.
+- **Settings → Pages → Deploy from a branch**
+- **Branch:** `main` • **Folder:** `/ (root)`
 - Save.
 
-Your site will appear at: `https://<your-username>.github.io/<repo-name>/`
+Your app will be live at: `https://<your-username>.github.io/<repo-name>/`
 
-> Uses **relative paths**, so it works with any repo name automatically.
-
-## What’s in V1.01
-- Splash screen with **LifeSafe** + **v1.01** under the title
-- Home with **rounded pill tabs** (scrollable)
-- No data yet — first step only.
+> Uses **relative paths**, so it works automatically with any repo name.

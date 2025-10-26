@@ -1,26 +1,58 @@
 (function(){
-  const TABS = ['Home','Vehicles','Health','Finance','IDs & Docs','Pets','Other'];
+  const TABS = [
+    {id:'home', label:'Home', contentId:'homeContent'},
+    {id:'vehicles', label:'Vehicles', contentId:'vehiclesContent'},
+    {id:'health', label:'Health', contentId:'healthContent'},
+    {id:'finance', label:'Finance', contentId:'financeContent'},
+    {id:'ids', label:'IDs & Docs', contentId:'idsContent'},
+    {id:'pets', label:'Pets', contentId:'petsContent'},
+    {id:'other', label:'Other', contentId:'otherContent'},
+  ];
+
   const splash = document.getElementById('splash');
-  const home = document.getElementById('home');
+  const appPhone = document.getElementById('home');
   const tabsEl = document.getElementById('tabs');
   const activeTitle = document.getElementById('activeTitle');
-  let active = 'Home';
 
-  TABS.forEach(name => {
+  // Render tabs
+  let active = 'home';
+  TABS.forEach(tab => {
     const btn = document.createElement('button');
-    btn.className = 'pill' + (name===active ? ' active' : '');
-    btn.textContent = name;
-    btn.addEventListener('click', () => {
-      active = name;
-      activeTitle.textContent = name;
-      Array.from(tabsEl.children).forEach(ch => ch.classList.remove('active'));
-      btn.classList.add('active');
-    });
+    btn.className = 'pillTab' + (tab.id===active ? ' active' : '');
+    btn.textContent = tab.label;
+    btn.addEventListener('click', () => setActive(tab.id));
     tabsEl.appendChild(btn);
+    tab._btn = btn;
   });
 
+  function setActive(id){
+    active = id;
+    const item = TABS.find(t=>t.id===id);
+    activeTitle.textContent = item.label;
+
+    // toggle tab button active state
+    TABS.forEach(t => t._btn.classList.toggle('active', t.id===id));
+
+    // show/hide content sections
+    TABS.forEach(t => {
+      const el = document.getElementById(t.contentId);
+      if(!el) return;
+      if(t.id === id) el.classList.remove('hidden');
+      else el.classList.add('hidden');
+    });
+  }
+
+  // Splash → App
   setTimeout(() => {
     splash.classList.add('hidden');
-    home.classList.remove('hidden');
+    appPhone.classList.remove('hidden');
   }, 900);
+
+  // Wire the Add Record button (placeholder)
+  const addBtn = document.getElementById('addBtn');
+  if(addBtn){
+    addBtn.addEventListener('click', () => {
+      addBtn.blur();
+    });
+  }
 })();

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LifeSafe v1.01</title>
+    <title>LifeSafe v1.02</title>
     <link rel="icon" href="favicon.svg">
     <link rel="stylesheet" href="styles.css">
     <meta name="theme-color" content="#ffffff">
@@ -20,7 +20,7 @@
             </svg>
           </div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.01</div>
+          <div class="version">v1.02</div>
         </div>
       </div>
 
@@ -32,9 +32,26 @@
         </header>
         <main class="content">
           <h2 id="activeTitle" class="homeTitle">Home</h2>
+
+          <section id="homeContent" class="homeSection">
+            <button id="addBtn" class="btn add full pill">+ Add Record</button>
+            <div class="hint">
+              <div class="hintIcon" aria-hidden="true">💡</div>
+              <div class="hintText">Start organising your life — add your first record</div>
+            </div>
+            <div id="homeList" class="list placeholder"></div>
+          </section>
+
+          <section id="vehiclesContent" class="hidden"></section>
+          <section id="healthContent" class="hidden"></section>
+          <section id="financeContent" class="hidden"></section>
+          <section id="idsContent" class="hidden"></section>
+          <section id="petsContent" class="hidden"></section>
+          <section id="otherContent" class="hidden"></section>
         </main>
       </div>
     </div>
+
     <script src="app.js"></script>
   </body>
 </html>
