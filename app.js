@@ -1,57 +1,42 @@
 (function(){
-  const TABS = [
-    {id:'home', label:'Home', contentId:'homeContent'},
-    {id:'vehicles', label:'Vehicles', contentId:'vehiclesContent'},
-    {id:'health', label:'Health', contentId:'healthContent'},
-    {id:'finance', label:'Finance', contentId:'financeContent'},
-    {id:'ids', label:'IDs & Docs', contentId:'idsContent'},
-    {id:'pets', label:'Pets', contentId:'petsContent'},
-    {id:'other', label:'Other', contentId:'otherContent'},
-  ];
+ const tabs=[
+  {id:'home',label:'Home',content:'homeContent'},
+  {id:'vehicles',label:'Vehicles',content:'vehiclesContent'},
+  {id:'health',label:'Health',content:'healthContent'},
+  {id:'finance',label:'Finance',content:'financeContent'},
+  {id:'ids',label:'IDs & Docs',content:'idsContent'},
+  {id:'pets',label:'Pets',content:'petsContent'},
+  {id:'other',label:'Other',content:'otherContent'}
+ ];
+ const splash=document.getElementById('splash');
+ const main=document.getElementById('main');
+ const tabsEl=document.getElementById('tabs');
+ const title=document.getElementById('activeTitle');
 
-  const splash = document.getElementById('splash');
-  const phone = document.getElementById('homePhone');
-  const tabsEl = document.getElementById('tabs');
-  const activeTitle = document.getElementById('activeTitle');
-
-  // Render tabs
-  let active = 'home';
-  TABS.forEach(tab => {
-    const btn = document.createElement('button');
-    btn.className = 'pillTab' + (tab.id===active ? ' active' : '');
-    btn.textContent = tab.label;
-    btn.addEventListener('click', () => setActive(tab.id));
-    tabsEl.appendChild(btn);
-    tab._btn = btn;
+ function switchTab(id){
+  tabs.forEach(t=>{
+    document.getElementById(t.content).classList.add('hidden');
   });
-
-  function setActive(id){
-    active = id;
-    const item = TABS.find(t=>t.id===id);
-    activeTitle.textContent = item.label;
-
-    // toggle tab button state
-    TABS.forEach(t => t._btn.classList.toggle('active', t.id===id));
-
-    // hide all sections, show only active
-    TABS.forEach(t => {
-      const el = document.getElementById(t.contentId);
-      if(!el) return;
-      if(t.id === id) el.classList.remove('hidden');
-      else el.classList.add('hidden');
-    });
+  const t=tabs.find(x=>x.id===id);
+  if(t){
+    document.getElementById(t.content).classList.remove('hidden');
+    title.textContent=t.label;
   }
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+ }
 
-  // Splash → App
-  setTimeout(() => {
-    splash.classList.add('hidden');
-    phone.classList.remove('hidden');
-    setActive('home'); // ensure initial state is consistent
-  }, 900);
+ tabs.forEach(t=>{
+  const btn=document.createElement('button');
+  btn.id='tab-'+t.id;
+  btn.textContent=t.label;
+  btn.onclick=()=>switchTab(t.id);
+  if(t.id==='home') btn.classList.add('active');
+  tabsEl.appendChild(btn);
+ });
 
-  // Wire the Home Add Record button (placeholder only)
-  const addBtnHome = document.getElementById('addBtnHome');
-  if(addBtnHome){
-    addBtnHome.addEventListener('click', () => addBtnHome.blur());
-  }
+ setTimeout(()=>{
+  splash.classList.add('hidden');
+  main.classList.remove('hidden');
+ },800);
 })();

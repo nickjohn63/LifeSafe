@@ -3,30 +3,21 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LifeSafe v1.02a</title>
+    <title>LifeSafe</title>
     <link rel="icon" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css">
-    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="styles.css?v=102b">
   </head>
   <body>
     <div id="app" class="app">
-      <!-- Splash -->
       <div id="splash" class="phone">
         <div class="statusbar"></div>
         <div class="splash">
-          <div class="logo" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 2c-2.7 2.3-5.4 2.7-8 3 0.4 5.9 2.2 10.1 8 14 5.8-3.9 7.6-8.1 8-14-2.6-0.3-5.3-0.7-8-3z" fill="#2f6adf"/>
-              <path d="M10.5 15l-3-3 1.6-1.6 1.4 1.4 4.4-4.4 1.6 1.6z" fill="#fff"/>
-            </svg>
-          </div>
+          <div class="logo"><img src="favicon.svg" alt=""></div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.02a</div>
+          <div class="version">v1.02b</div>
         </div>
       </div>
-
-      <!-- App -->
-      <div id="homePhone" class="phone hidden">
+      <div id="main" class="phone hidden">
         <div class="statusbar"></div>
         <header class="header">
           <div class="title">LifeSafe</div>
@@ -34,45 +25,23 @@
         </header>
         <main class="content">
           <h2 id="activeTitle" class="homeTitle">Home</h2>
-
-          <!-- Home tab -->
           <section id="homeContent" class="section">
             <button id="addBtnHome" class="btn add full pill">+ Add Record</button>
             <div class="hint">
-              <div class="hintIcon" aria-hidden="true">💡</div>
+              <div class="hintIcon">💡</div>
               <div class="hintText">Start organising your life — add your first record</div>
             </div>
-            <div id="homeList" class="list placeholder"></div>
+            <div class="list placeholder"></div>
           </section>
-
-          <!-- Other tabs (placeholders only) -->
-          <section id="vehiclesContent" class="section hidden">
-            <div class="placeholderText">Vehicles tab — no records yet.</div>
-          </section>
-
-          <section id="healthContent" class="section hidden">
-            <div class="placeholderText">Health tab — no records yet.</div>
-          </section>
-
-          <section id="financeContent" class="section hidden">
-            <div class="placeholderText">Finance tab — no records yet.</div>
-          </section>
-
-          <section id="idsContent" class="section hidden">
-            <div class="placeholderText">IDs & Docs tab — no records yet.</div>
-          </section>
-
-          <section id="petsContent" class="section hidden">
-            <div class="placeholderText">Pets tab — no records yet.</div>
-          </section>
-
-          <section id="otherContent" class="section hidden">
-            <div class="placeholderText">Other tab — no records yet.</div>
-          </section>
+          <section id="vehiclesContent" class="section hidden centerText">Empty</section>
+          <section id="healthContent" class="section hidden centerText">Empty</section>
+          <section id="financeContent" class="section hidden centerText">Empty</section>
+          <section id="idsContent" class="section hidden centerText">Empty</section>
+          <section id="petsContent" class="section hidden centerText">Empty</section>
+          <section id="otherContent" class="section hidden centerText">Empty</section>
         </main>
       </div>
     </div>
-
-    <script src="app.js"></script>
+    <script src="app.js?v=102b"></script>
   </body>
 </html>
