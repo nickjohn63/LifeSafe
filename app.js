@@ -15,10 +15,25 @@
   const title=document.getElementById('activeTitle');
   const listEl=document.getElementById('homeList');
 
-  const STORAGE_KEY='lifesafe_records_v105';
+  const STORAGE_KEY='lifesafe_records_v105'; // keep same to preserve earlier data
+
+  // Helpers
+  function formatDate(val){
+    if(!val) return '';
+    try{
+      const d = new Date(val + 'T00:00:00');
+      return d.toLocaleDateString();
+    }catch(e){ return val; }
+  }
+  function isPast(val){
+    if(!val) return false;
+    const today=new Date(); today.setHours(0,0,0,0);
+    const d=new Date(val + 'T00:00:00');
+    return d < today;
+  }
 
   // Records load/save
-  let records=[]; // {id,title,type,desc,createdAt}
+  let records=[]; // {id,title,type,desc,startDate,renewalDate,createdAt}
   function load(){
     try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ records=JSON.parse(raw)||[]; } }catch(e){ records=[]; }
   }
@@ -45,6 +60,18 @@
       meta.appendChild(badge);
       const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc || '';
 
+      // Dates area
+      const dates=document.createElement('div'); dates.className='dates';
+      if(rec.startDate){ 
+        const ln=document.createElement('div'); ln.textContent='Start: ' + formatDate(rec.startDate); dates.appendChild(ln);
+      }
+      if(rec.renewalDate){
+        const ln2=document.createElement('div'); 
+        ln2.textContent='Renewal: ' + formatDate(rec.renewalDate) + (isPast(rec.renewalDate) ? '  ❗' : '');
+        if(isPast(rec.renewalDate)) ln2.classList.add('expired');
+        dates.appendChild(ln2);
+      }
+
       // Actions
       const editBtn=document.createElement('button'); editBtn.className='btn small ghost'; editBtn.textContent='Edit';
       editBtn.onclick=()=>startEdit(rec.id);
@@ -53,6 +80,7 @@
 
       right.appendChild(editBtn); right.appendChild(delBtn);
       left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d);
+      if(rec.startDate || rec.renewalDate) left.appendChild(dates);
       top.appendChild(left); top.appendChild(right);
       card.appendChild(top);
 
@@ -93,6 +121,8 @@
   const fTitle=document.getElementById('fTitle');
   const fType=document.getElementById('fType');
   const fDesc=document.getElementById('fDesc');
+  const fStart=document.getElementById('fStart');
+  const fRenewal=document.getElementById('fRenewal');
   const saveBtn=document.getElementById('saveRecord');
   const modalTitle=document.getElementById('modalTitle');
 
@@ -105,7 +135,7 @@
     if(mode==='add'){
       modalTitle.textContent='Add Record';
       saveBtn.textContent='Save';
-      fTitle.value=''; fType.value=''; fDesc.value='';
+      fTitle.value=''; fType.value=''; fDesc.value=''; fStart.value=''; fRenewal.value='';
       editingId=null;
     }
     fTitle.focus();
@@ -120,7 +150,11 @@
     editingId=id;
     modalTitle.textContent='Edit Record';
     saveBtn.textContent='Save changes';
-    fTitle.value=rec.title||''; fType.value=rec.type||''; fDesc.value=rec.desc||'';
+    fTitle.value=rec.title||''; 
+    fType.value=rec.type||''; 
+    fDesc.value=rec.desc||'';
+    fStart.value=rec.startDate||'';
+    fRenewal.value=rec.renewalDate||'';
     openModal('edit');
   }
 
@@ -139,7 +173,9 @@
     const payload={
       title: fTitle.value.trim(),
       type: fType.value.trim(),
-      desc: fDesc.value.trim()
+      desc: fDesc.value.trim(),
+      startDate: fStart.value || '',
+      renewalDate: fRenewal.value || ''
     };
     if(editingId){
       const idx=records.findIndex(r=>r.id===editingId);

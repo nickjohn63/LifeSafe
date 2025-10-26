@@ -1,12 +1,14 @@
-# LifeSafe v1.05 (Static, zero-build)
+# LifeSafe v1.06 (Static, zero-build)
 
-**Edit + Delete + Persistence**
+Adds **date fields** + expiry highlighting.
 
-What's new:
-- Tap **Edit** on a card → opens popup pre-filled → **Save changes**
-- Tap **Delete** → confirm → removes the card
-- Records are now **saved to LocalStorage** (survive refresh)
-- Splash shows v1.05
+## New
+- **Start Date** and **Renewal Date** in Add/Edit popup (both optional, standard date pickers)
+- Dates are **shown on cards** under the description:
+  - `Start: dd/mm/yyyy`
+  - `Renewal: dd/mm/yyyy` (turns **red** with ❗ if the date is in the past)
+- Records continue to **persist in LocalStorage** (same key as v1.05). 
+- You can still **Edit** and **Delete** records.
 
 ## Upload
 1) Open your GitHub repo
@@ -18,8 +20,4 @@ What's new:
    - README.md
 3) Settings → Pages → Deploy from branch → `main` / `(root)`
 
-Then open your site and try:
-- **Add Record** → Save → see card
-- **Edit** → change fields → Save changes
-- **Delete** → confirm → removed
-- Refresh page → cards remain (LocalStorage)
+Then open your site and add a record with dates to see them on the card.
