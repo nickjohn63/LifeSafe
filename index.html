@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LifeSafe</title>
     <link rel="icon" href="favicon.svg" />
-    <link rel="stylesheet" href="styles.css?v=107" />
+    <link rel="stylesheet" href="styles.css?v=108" />
   </head>
   <body>
     <div id="app" class="app">
@@ -15,7 +15,7 @@
         <div class="splash">
           <div class="logo"><img src="favicon.svg" alt="" /></div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.07</div>
+          <div class="version">v1.08</div>
         </div>
       </div>
 
@@ -33,7 +33,7 @@
           <!-- Home tab -->
           <section id="homeContent" class="section">
             <button id="addBtnHome" class="btn add full pill">+ Add Record</button>
-            <div class="hint">
+            <div id="homeHint" class="hint">
               <div class="hintIcon">💡</div>
               <div class="hintText">Start organising your life — add your first record</div>
             </div>
@@ -59,9 +59,7 @@
           <div style="width:36px;"></div>
         </header>
         <main class="content">
-          <div id="detailWrap" class="detailWrap">
-            <!-- Populated dynamically -->
-          </div>
+          <div id="detailWrap" class="detailWrap"></div>
           <div class="detailActions">
             <button id="editFromDetail" class="btn ghost pill">Edit</button>
             <button id="deleteFromDetail" class="btn danger pill">Delete</button>
@@ -109,6 +107,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=107"></script>
+    <script src="app.js?v=108"></script>
   </body>
 </html>

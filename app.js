@@ -15,6 +15,7 @@
   const tabsEl=document.getElementById('tabs');
   const title=document.getElementById('activeTitle');
   const listEl=document.getElementById('homeList');
+  const hintEl=document.getElementById('homeHint');
   const detailWrap=document.getElementById('detailWrap');
   const backBtn=document.getElementById('backBtn');
   const editFromDetail=document.getElementById('editFromDetail');
@@ -33,6 +34,10 @@
     const d=new Date(val+'T00:00:00');
     return d < today;
   }
+  function toggleHint(){
+    if(!hintEl) return;
+    hintEl.classList.toggle('hidden', records.length>0);
+  }
 
   // Records
   let records=[]; // {id,title,type,desc,startDate,renewalDate,createdAt}
@@ -43,6 +48,7 @@
 
   function renderList(){
     listEl.innerHTML='';
+    toggleHint();
     if(records.length===0){
       const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
       listEl.appendChild(empty); return;
@@ -148,7 +154,6 @@
   function remove(id){
     if(!confirm('Delete this record?')) return;
     records = records.filter(r=>r.id!==id); save(); renderList();
-    // if deleting from detail view, go back
     if(viewingId===id){ showMain(); }
   }
 
@@ -168,12 +173,10 @@
     if(editingId){
       const idx=records.findIndex(r=>r.id===editingId);
       if(idx>-1){ records[idx]={...records[idx], ...payload}; }
-      // if editing from detail view, refresh detail too
       if(viewingId===editingId){ renderDetail(records[idx]); }
     }else{
       const id = Date.now().toString(36);
       records.unshift({ id, createdAt: new Date().toISOString(), ...payload });
-      // open detail for the new record?
     }
     save(); renderList(); closeModal();
   });
@@ -199,9 +202,7 @@
       if(isPast(rec.renewalDate)) ln.classList.add('expired');
       dates.appendChild(ln);
     }
-
-    card.appendChild(titleEl);
-    card.appendChild(meta);
+    card.appendChild(titleEl); card.appendChild(meta);
     if(desc.textContent) card.appendChild(desc);
     if(rec.startDate || rec.renewalDate) card.appendChild(dates);
     detailWrap.appendChild(card);

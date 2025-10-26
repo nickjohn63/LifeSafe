@@ -1,12 +1,12 @@
-# LifeSafe v1.07 (Static, zero-build)
+# LifeSafe v1.08 (Static, zero-build)
 
-Adds a **Detail View screen**:
-- Tap any card → opens a dedicated **Details** page
-- Shows Title, Type, Description, Start Date, Renewal Date (with expired highlight)
-- Buttons at bottom: **Edit** and **Delete**
-- Back button to return to the Home list
-- Edit/Delete also still work from the list
-- Data persists in **LocalStorage** (same key as v1.05/1.06)
+Change: **Hide the Home hint once you have at least one record.**
+
+Also includes previous features:
+- Add/Edit/Delete records with LocalStorage persistence
+- Start/Renewal dates (optional) with expired highlight
+- Tap a card to open **Detail View** with back/edit/delete
+- Splash shows v1.08
 
 ## Upload
 1) Open your GitHub repo
@@ -18,4 +18,4 @@ Adds a **Detail View screen**:
    - README.md
 3) Settings → Pages → Deploy from branch → `main` / `(root)`
 
-Then open your site, add a record, and **tap the card** to see the detail view.
+Open your site. The blue hint is visible only when there are **zero** records.
