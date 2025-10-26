@@ -59,79 +59,20 @@
   function toggleHintFor(tab){ const arr=data[tab]||[]; if(tab==='home'&&home.hint) home.hint.classList.toggle('hidden',arr.length>0); if(tab==='vehicles'&&vehicles.hint) vehicles.hint.classList.toggle('hidden',arr.length>0); }
   function updateBanner(tab){ const arr=data[tab]||[]; const soon=arr.filter(r=>isDueSoon(r.renewalDate)).length; const exp=arr.filter(r=>isPast(r.renewalDate)).length; const el=tab==='home'?home.banner:tab==='vehicles'?vehicles.banner:null; if(!el) return; if(soon||exp){ const parts=[]; if(soon) parts.push(`${soon} due within 7 days`); if(exp) parts.push(`${exp} expired`); el.textContent='Heads up: '+parts.join(' · '); el.classList.remove('hidden'); } else { el.classList.add('hidden'); el.textContent=''; } }
 
-  // iOS/Safari checks
-  function isIOS(){ return /iP(ad|hone|od)/.test(navigator.userAgent) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document); }
-
-  // Build ICS as a timed event at 09:00 local, 1 hour, with -P1W alarm
-  function makeIcs(rec){
-    const title = rec.title || 'LifeSafe Renewal';
-    const desc = (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||'');
-    const dt = rec.renewalDate; if(!dt) return null;
-    const dtstamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
-    const ymd = dt.replace(/-/g,'');
-    const dtstart = ymd + 'T090000';
-    const dtend   = ymd + 'T100000';
-    const uid = `${dtstart}-${rec.id||''}-lifesafe`;
-    const content = [
-      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LifeSafe//V1.10f//EN','BEGIN:VEVENT',
-      `UID:${uid}`,`DTSTAMP:${dtstamp}`,`DTSTART:${dtstart}`,`DTEND:${dtend}`,`SUMMARY:${title}`,`DESCRIPTION:${desc}`,
-      'BEGIN:VALARM','TRIGGER:-P1W','ACTION:DISPLAY','DESCRIPTION:Renewal due in 1 week','END:VALARM',
-      'END:VEVENT','END:VCALENDAR'
-    ].join('\r\n');
-    const fileName = `${(title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'')}-${rec.renewalDate}.ics`;
-    return {content,fileName};
-  }
-
-  // Two iPhone methods
-  async function openCalendarIOS_MethodA(rec){
-    const made = makeIcs(rec); if(!made) return;
-    const {content,fileName} = made;
-    // Try Web Share + File first
-    try{
-      const testFile = new File(['x'],'x.txt',{type:'text/plain'});
-      const supportsFiles = !!(navigator.canShare && navigator.canShare({ files:[testFile] }));
-      if(navigator.share && supportsFiles){
-        const file = new File([content], fileName, { type: 'text/calendar' });
-        await navigator.share({ files:[file], title:'Open in Calendar' });
-        return;
-      }
-    }catch(e){}
-    // Fallback: data: URL in same tab
-    const dataUri = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content);
-    window.location.href = dataUri;
-  }
-  function openCalendarIOS_MethodB(rec){
-    const made = makeIcs(rec); if(!made) return;
-    const {content} = made;
-    const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    window.location.href = url;
-    setTimeout(()=>URL.revokeObjectURL(url), 60000);
-  }
-
-  function openGoogleCalendar(rec){
+  // Google Calendar open (10:00–11:00 on renewal date)
+  function openGoogleCalendarTimed(rec){
     if(!rec.renewalDate) return;
-    const start = rec.renewalDate.replace(/-/g,'');
-    const end = start;
+    const ymd = rec.renewalDate.replace(/-/g,'');
+    const start = ymd + 'T100000';
+    const end   = ymd + 'T110000';
     const params = new URLSearchParams({
       action:'TEMPLATE',
       text: rec.title || 'LifeSafe Renewal',
-      details: (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||''),
-      dates: `${start}/${end}`
+      details: (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||'')
     });
+    // Google expects dates in the path-like param
+    params.set('dates', `${start}/${end}`);
     window.open(`https://calendar.google.com/calendar/render?${params.toString()}`,'_blank','noopener');
-  }
-
-  // Desktop/others
-  function downloadIcs(rec){
-    const made = makeIcs(rec); if(!made) return;
-    const {content,fileName} = made;
-    const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = fileName;
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
   }
 
   // Rendering
@@ -146,8 +87,6 @@
       const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
       container.appendChild(empty); return;
     }
-    const oniOS = isIOS();
-
     arr.forEach(rec=>{
       const card=document.createElement('div'); card.className='card';
       const top=document.createElement('div'); top.className='cardTop';
@@ -170,27 +109,15 @@
         dates.appendChild(ln2);
       }
 
-      if(oniOS){
-        const calA=document.createElement('button'); calA.className='btn small ghost'; calA.textContent='Open in Apple Calendar (A)';
-        calA.onclick=(e)=>{ e.stopPropagation(); openCalendarIOS_MethodA(rec); };
-        const calB=document.createElement('button'); calB.className='btn small ghost'; calB.textContent='Open in Apple Calendar (B)';
-        calB.onclick=(e)=>{ e.stopPropagation(); openCalendarIOS_MethodB(rec); };
-        right.appendChild(calA); right.appendChild(calB);
-      }else{
-        const calBtn=document.createElement('button'); calBtn.className='btn small ghost'; calBtn.textContent='Add to Calendar (.ics)';
-        calBtn.onclick=(e)=>{ e.stopPropagation(); downloadIcs(rec); };
-        right.appendChild(calBtn);
-      }
-
-      const gcalBtn=document.createElement('button'); gcalBtn.className='btn small ghost'; gcalBtn.textContent='Add to Google Calendar';
-      gcalBtn.onclick=(e)=>{ e.stopPropagation(); openGoogleCalendar(rec); };
+      const gcBtn=document.createElement('button'); gcBtn.className='btn small ghost'; gcBtn.textContent='Add Reminder to Calendar';
+      gcBtn.onclick=(e)=>{ e.stopPropagation(); openGoogleCalendarTimed(rec); };
 
       const editBtn=document.createElement('button'); editBtn.className='btn small ghost'; editBtn.textContent='Edit';
       editBtn.onclick=(e)=>{ e.stopPropagation(); startEdit(tabId, rec.id); };
       const delBtn=document.createElement('button'); delBtn.className='btn small danger'; delBtn.textContent='Delete';
       delBtn.onclick=(e)=>{ e.stopPropagation(); remove(tabId, rec.id); };
 
-      right.appendChild(gcalBtn); right.appendChild(editBtn); right.appendChild(delBtn);
+      right.appendChild(gcBtn); right.appendChild(editBtn); right.appendChild(delBtn);
       left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d); if(rec.startDate||rec.renewalDate) left.appendChild(dates);
       top.appendChild(left); top.appendChild(right);
       card.appendChild(top);
@@ -308,8 +235,8 @@
     }
     card.appendChild(titleEl); card.appendChild(meta); if(desc.textContent) card.appendChild(desc); if(rec.startDate||rec.renewalDate) card.appendChild(dates);
     detailWrap.appendChild(card);
-    // For simplicity in detail view: use Method B (blob) first; user can back to list for Method A if needed.
-    calendarFromDetail.onclick=()=>openCalendarIOS_MethodB(rec);
+    // Detail view calendar button now triggers Google Calendar
+    calendarFromDetail.onclick=()=>openGoogleCalendarTimed(rec);
   }
 
   function showDetail(){ main.classList.add('hidden'); detail.classList.remove('hidden'); }

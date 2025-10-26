@@ -1,16 +1,15 @@
-# LifeSafe v1.10f (Static, zero-build)
+# LifeSafe v1.11 (Static, zero-build)
 
-**Fix:** On iOS/Safari, "Add to Calendar" now opens a **Calendar-ready** `.ics` using a `data:` URL fallback (Safari sometimes blocks Blob downloads).  
-Other browsers still use a normal file download.
+**Google Calendar–only flow (syncs to Apple Calendar)**
 
-Includes all v1.10 features:
-- **Due soon** chips and per-tab **banner** summary
-- **Add to Calendar (.ics)** with **-1 week** reminder
-- Per-tab records (Home + Vehicles), LocalStorage persistence, detail view, edit/delete.
+- Replaced all `.ics` / Apple Calendar buttons with a single **Add Reminder to Calendar** button.
+- Opens a prefilled **Google Calendar** event at **10:00–11:00** on the Renewal Date.
+- If your iPhone has your Google account added (Settings → Calendar → Accounts), the event will **sync to Apple Calendar** automatically.
+- Alerts/notifications follow your **Google Calendar default** settings for new events.
 
 ## Upload
 1) Open your GitHub repo
-2) Upload these files to the root:
+2) Replace files in the **root** with:
    - `index.html`
    - `styles.css`
    - `app.js`
@@ -18,5 +17,5 @@ Includes all v1.10 features:
    - `README.md`
 3) Settings → Pages → Deploy from branch → `main` / `(root)`
 
-### iOS usage tip
-Tap **Add to Calendar** → if a preview opens, choose **Open in “Calendar”** (or **Share** → **Calendar**).
+## Tip
+Adjust default event notifications in Google Calendar (Settings → your calendar → Event notifications) if you want a global **1-week** alert.
