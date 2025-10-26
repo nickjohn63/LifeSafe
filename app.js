@@ -61,7 +61,6 @@
 
   // iOS/Safari checks
   function isIOS(){ return /iP(ad|hone|od)/.test(navigator.userAgent) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document); }
-  function isSafari(){ return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
 
   // Build ICS as a timed event at 09:00 local, 1 hour, with -P1W alarm
   function makeIcs(rec){
@@ -74,13 +73,40 @@
     const dtend   = ymd + 'T100000';
     const uid = `${dtstart}-${rec.id||''}-lifesafe`;
     const content = [
-      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LifeSafe//V1.10e//EN','BEGIN:VEVENT',
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LifeSafe//V1.10f//EN','BEGIN:VEVENT',
       `UID:${uid}`,`DTSTAMP:${dtstamp}`,`DTSTART:${dtstart}`,`DTEND:${dtend}`,`SUMMARY:${title}`,`DESCRIPTION:${desc}`,
       'BEGIN:VALARM','TRIGGER:-P1W','ACTION:DISPLAY','DESCRIPTION:Renewal due in 1 week','END:VALARM',
       'END:VEVENT','END:VCALENDAR'
     ].join('\r\n');
     const fileName = `${(title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'')}-${rec.renewalDate}.ics`;
     return {content,fileName};
+  }
+
+  // Two iPhone methods
+  async function openCalendarIOS_MethodA(rec){
+    const made = makeIcs(rec); if(!made) return;
+    const {content,fileName} = made;
+    // Try Web Share + File first
+    try{
+      const testFile = new File(['x'],'x.txt',{type:'text/plain'});
+      const supportsFiles = !!(navigator.canShare && navigator.canShare({ files:[testFile] }));
+      if(navigator.share && supportsFiles){
+        const file = new File([content], fileName, { type: 'text/calendar' });
+        await navigator.share({ files:[file], title:'Open in Calendar' });
+        return;
+      }
+    }catch(e){}
+    // Fallback: data: URL in same tab
+    const dataUri = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content);
+    window.location.href = dataUri;
+  }
+  function openCalendarIOS_MethodB(rec){
+    const made = makeIcs(rec); if(!made) return;
+    const {content} = made;
+    const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    window.location.href = url;
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
   }
 
   function openGoogleCalendar(rec){
@@ -96,31 +122,10 @@
     window.open(`https://calendar.google.com/calendar/render?${params.toString()}`,'_blank','noopener');
   }
 
-  async function openInCalendar(rec){
+  // Desktop/others
+  function downloadIcs(rec){
     const made = makeIcs(rec); if(!made) return;
     const {content,fileName} = made;
-
-    // Prefer Web Share + File (iOS 15+)
-    try{
-      const testFile = new File(['x'],'x.txt',{type:'text/plain'});
-      const supportsFiles = !!(navigator.canShare && navigator.canShare({ files:[testFile] }));
-      if(isIOS() && navigator.share && supportsFiles){
-        const file = new File([content], fileName, { type: 'text/calendar' });
-        await navigator.share({ files:[file], title:'Open in Calendar' });
-        return;
-      }
-    }catch(e){ /* continue */ }
-
-    // iPhone direct open (Calendar-first): navigate to Blob URL
-    if(isIOS()){
-      const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      window.location.href = url;
-      setTimeout(()=>URL.revokeObjectURL(url), 60000);
-      return;
-    }
-
-    // Desktop/others: download
     const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -141,8 +146,7 @@
       const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
       container.appendChild(empty); return;
     }
-
-    const onIphone = isIOS();
+    const oniOS = isIOS();
 
     arr.forEach(rec=>{
       const card=document.createElement('div'); card.className='card';
@@ -166,9 +170,17 @@
         dates.appendChild(ln2);
       }
 
-      const calBtn=document.createElement('button'); calBtn.className='btn small ghost';
-      calBtn.textContent = onIphone ? 'Open in Apple Calendar' : 'Add to Calendar (.ics)';
-      calBtn.onclick=(e)=>{ e.stopPropagation(); openInCalendar(rec); };
+      if(oniOS){
+        const calA=document.createElement('button'); calA.className='btn small ghost'; calA.textContent='Open in Apple Calendar (A)';
+        calA.onclick=(e)=>{ e.stopPropagation(); openCalendarIOS_MethodA(rec); };
+        const calB=document.createElement('button'); calB.className='btn small ghost'; calB.textContent='Open in Apple Calendar (B)';
+        calB.onclick=(e)=>{ e.stopPropagation(); openCalendarIOS_MethodB(rec); };
+        right.appendChild(calA); right.appendChild(calB);
+      }else{
+        const calBtn=document.createElement('button'); calBtn.className='btn small ghost'; calBtn.textContent='Add to Calendar (.ics)';
+        calBtn.onclick=(e)=>{ e.stopPropagation(); downloadIcs(rec); };
+        right.appendChild(calBtn);
+      }
 
       const gcalBtn=document.createElement('button'); gcalBtn.className='btn small ghost'; gcalBtn.textContent='Add to Google Calendar';
       gcalBtn.onclick=(e)=>{ e.stopPropagation(); openGoogleCalendar(rec); };
@@ -178,7 +190,7 @@
       const delBtn=document.createElement('button'); delBtn.className='btn small danger'; delBtn.textContent='Delete';
       delBtn.onclick=(e)=>{ e.stopPropagation(); remove(tabId, rec.id); };
 
-      right.appendChild(calBtn); right.appendChild(gcalBtn); right.appendChild(editBtn); right.appendChild(delBtn);
+      right.appendChild(gcalBtn); right.appendChild(editBtn); right.appendChild(delBtn);
       left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d); if(rec.startDate||rec.renewalDate) left.appendChild(dates);
       top.appendChild(left); top.appendChild(right);
       card.appendChild(top);
@@ -296,7 +308,8 @@
     }
     card.appendChild(titleEl); card.appendChild(meta); if(desc.textContent) card.appendChild(desc); if(rec.startDate||rec.renewalDate) card.appendChild(dates);
     detailWrap.appendChild(card);
-    calendarFromDetail.onclick=()=>openInCalendar(rec);
+    // For simplicity in detail view: use Method B (blob) first; user can back to list for Method A if needed.
+    calendarFromDetail.onclick=()=>openCalendarIOS_MethodB(rec);
   }
 
   function showDetail(){ main.classList.add('hidden'); detail.classList.remove('hidden'); }

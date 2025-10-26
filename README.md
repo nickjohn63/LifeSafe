@@ -1,4 +1,4 @@
-# LifeSafe v1.10e (Static, zero-build)
+# LifeSafe v1.10f (Static, zero-build)
 
 **Fix:** On iOS/Safari, "Add to Calendar" now opens a **Calendar-ready** `.ics` using a `data:` URL fallback (Safari sometimes blocks Blob downloads).  
 Other browsers still use a normal file download.
