@@ -1,14 +1,12 @@
-# LifeSafe v1.10 (Static, zero-build)
+# LifeSafe v1.10a (Static, zero-build)
 
-**Renewal alerts (static-friendly)**
+**Fix:** On iOS/Safari, "Add to Calendar" now opens a **Calendar-ready** `.ics` using a `data:` URL fallback (Safari sometimes blocks Blob downloads).  
+Other browsers still use a normal file download.
 
-New in this version:
-- **Due soon** logic: if Renewal Date is within **7 days**, the card shows a yellow **Due soon (Xd)** chip and the tab shows a **banner** ("Heads up: n due within 7 days · m expired").
-- **Expired** renewals remain **red ❗** as before.
-- **Add to Calendar (.ics)** action on each card and in the Detail View:
-  - Creates an all-day event on the renewal date
-  - Includes a **1-week reminder (VALARM)** so your phone/calendar will alert even if the site is closed
-- Keeps per-tab records (Home + Vehicles enabled), LocalStorage persistence.
+Includes all v1.10 features:
+- **Due soon** chips and per-tab **banner** summary
+- **Add to Calendar (.ics)** with **-1 week** reminder
+- Per-tab records (Home + Vehicles), LocalStorage persistence, detail view, edit/delete.
 
 ## Upload
 1) Open your GitHub repo
@@ -20,6 +18,5 @@ New in this version:
    - `README.md`
 3) Settings → Pages → Deploy from branch → `main` / `(root)`
 
-Then open your site and test:
-- Add items with Renewal Dates within the next 7 days → see **Due soon** chip + banner
-- Click **Add to Calendar** to download an `.ics` with a **-1 week** alarm
+### iOS usage tip
+Tap **Add to Calendar** → if a preview opens, choose **Open in “Calendar”** (or **Share** → **Calendar**).

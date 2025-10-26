@@ -127,7 +127,7 @@
     const content = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//LifeSafe//V1.10//EN',
+      'PRODID:-//LifeSafe//V1.10a//EN',
       'BEGIN:VEVENT',
       `UID:${uid}`,
       `DTSTAMP:${dtstamp}`,
@@ -141,16 +141,30 @@
       'END:VALARM',
       'END:VEVENT',
       'END:VCALENDAR'
-    ].join('\\r\\n');
+    ].join('\r\n');
     return content;
   }
 
+  // iOS/Safari handling for downloads
+  function isIOS(){ return /iP(ad|hone|od)/.test(navigator.platform) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document); }
+  function isSafari(){ return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
+
   function downloadIcs(rec){
     if(!rec.renewalDate) return;
-    const titleSlug = (rec.title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'');
-    const fileName = `${titleSlug || 'renewal'}-${rec.renewalDate}.ics`;
     const content = makeIcs(rec);
     if(!content) return;
+    const titleSlug = (rec.title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'');
+    const fileName = `${titleSlug || 'renewal'}-${rec.renewalDate}.ics`;
+
+    // iOS Safari often blocks Blob downloads + download attribute.
+    if(isIOS() && isSafari()){
+      const dataUri = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content);
+      // Open in same tab to trigger "Open in Calendar"
+      window.location.href = dataUri;
+      return;
+    }
+
+    // Other browsers: Blob + download attribute
     const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -182,8 +196,9 @@
       const badge=document.createElement('span'); badge.className='badge'; badge.textContent=rec.type || 'General';
       meta.appendChild(badge);
       // due soon chip
-      if(isDueSoon(rec.renewalDate)){
-        const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${daysUntil(rec.renewalDate)}d)`;
+      const n = daysUntil(rec.renewalDate);
+      if(n>=0 && n<=7){
+        const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${n}d)`;
         meta.appendChild(chip);
       }
       const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc || '';
