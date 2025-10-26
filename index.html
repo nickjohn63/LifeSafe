@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LifeSafe</title>
     <link rel="icon" href="favicon.svg" />
-    <link rel="stylesheet" href="styles.css?v=103" />
+    <link rel="stylesheet" href="styles.css?v=104" />
   </head>
   <body>
     <div id="app" class="app">
@@ -15,7 +15,7 @@
         <div class="splash">
           <div class="logo"><img src="favicon.svg" alt="" /></div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.03</div>
+          <div class="version">v1.04</div>
         </div>
       </div>
 
@@ -37,7 +37,7 @@
               <div class="hintIcon">💡</div>
               <div class="hintText">Start organising your life — add your first record</div>
             </div>
-            <div class="list placeholder"></div>
+            <div id="homeList" class="recordList"></div>
           </section>
 
           <!-- Other tabs (centered 'Empty') -->
@@ -51,7 +51,7 @@
       </div>
     </div>
 
-    <!-- Modal (V1.03) -->
+    <!-- Modal (V1.03/04) -->
     <div id="overlay" class="overlay hidden"></div>
     <div id="modal" class="modal hidden" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
       <div class="modalHeader">
@@ -80,6 +80,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=103"></script>
+    <script src="app.js?v=104"></script>
   </body>
 </html>
