@@ -18,20 +18,8 @@
   const title=document.getElementById('activeTitle');
 
   // Per-tab refs
-  const home={
-    root: document.getElementById('homeContent'),
-    addBtn: document.getElementById('addBtnHome'),
-    hint: document.getElementById('homeHint'),
-    banner: document.getElementById('homeBanner'),
-    list: document.getElementById('homeList')
-  };
-  const vehicles={
-    root: document.getElementById('vehiclesContent'),
-    addBtn: document.getElementById('addBtnVehicles'),
-    hint: document.getElementById('vehiclesHint'),
-    banner: document.getElementById('vehiclesBanner'),
-    list: document.getElementById('vehiclesList')
-  };
+  const home={ root:document.getElementById('homeContent'), addBtn:document.getElementById('addBtnHome'), hint:document.getElementById('homeHint'), banner:document.getElementById('homeBanner'), list:document.getElementById('homeList') };
+  const vehicles={ root:document.getElementById('vehiclesContent'), addBtn:document.getElementById('addBtnVehicles'), hint:document.getElementById('vehiclesHint'), banner:document.getElementById('vehiclesBanner'), list:document.getElementById('vehiclesList') };
 
   // Detail view
   const detailWrap=document.getElementById('detailWrap');
@@ -53,16 +41,8 @@
   const modalTitle=document.getElementById('modalTitle');
 
   // Storage
-  const STORAGE_KEY='lifesafe_tabbed_records_v109'; // unchanged
-  let data={
-    home: [],
-    vehicles: [],
-    health: [],
-    finance: [],
-    ids: [],
-    pets: [],
-    other: []
-  };
+  const STORAGE_KEY='lifesafe_tabbed_records_v109';
+  let data={ home:[], vehicles:[], health:[], finance:[], ids:[], pets:[], other:[] };
 
   // State
   let activeTab='home';
@@ -70,114 +50,77 @@
   let viewing={ tab:null, id:null };
 
   // Helpers
-  function load(){
-    try{
-      const raw=localStorage.getItem(STORAGE_KEY);
-      if(raw){ const parsed=JSON.parse(raw)||{}; data={...data, ...parsed}; }
-    }catch(e){ /* ignore */ }
-  }
-  function save(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
-  }
-  function formatDate(val){
-    if(!val) return '';
-    try{ const d=new Date(val+'T00:00:00'); return d.toLocaleDateString(); }catch(e){ return val; }
-  }
-  function daysUntil(val){
-    if(!val) return Infinity;
-    const today=new Date(); today.setHours(0,0,0,0);
-    const d=new Date(val+'T00:00:00');
-    return Math.floor((d - today)/(1000*60*60*24));
-  }
-  function isPast(val){ return daysUntil(val) < 0; }
-  function isDueSoon(val){ const n=daysUntil(val); return n>=0 && n<=7; }
-
-  function toggleHintFor(tabId){
-    const arr=data[tabId]||[];
-    if(tabId==='home' && home.hint){ home.hint.classList.toggle('hidden', arr.length>0); }
-    if(tabId==='vehicles' && vehicles.hint){ vehicles.hint.classList.toggle('hidden', arr.length>0); }
-  }
-  function updateBanner(tabId){
-    const arr=data[tabId]||[];
-    const soon = arr.filter(r=>isDueSoon(r.renewalDate)).length;
-    const exp  = arr.filter(r=>isPast(r.renewalDate)).length;
-    const el = tabId==='home'? home.banner : tabId==='vehicles'? vehicles.banner : null;
-    if(!el) return;
-    if(soon>0 || exp>0){
-      const parts=[];
-      if(soon>0) parts.push(`${soon} due within 7 days`);
-      if(exp>0) parts.push(`${exp} expired`);
-      el.textContent = `Heads up: ` + parts.join(" · ");
-      el.classList.remove('hidden');
-    }else{
-      el.classList.add('hidden');
-      el.textContent='';
-    }
-  }
+  function load(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) data={...data, ...(JSON.parse(raw)||{})}; }catch(e){} }
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+  function formatDate(v){ if(!v) return ''; try{ return new Date(v+'T00:00:00').toLocaleDateString(); }catch(e){ return v; } }
+  function daysUntil(v){ if(!v) return Infinity; const t=new Date(); t.setHours(0,0,0,0); const d=new Date(v+'T00:00:00'); return Math.floor((d-t)/(1000*60*60*24)); }
+  function isPast(v){ return daysUntil(v)<0; }
+  function isDueSoon(v){ const n=daysUntil(v); return n>=0 && n<=7; }
+  function toggleHintFor(tab){ const arr=data[tab]||[]; if(tab==='home'&&home.hint) home.hint.classList.toggle('hidden',arr.length>0); if(tab==='vehicles'&&vehicles.hint) vehicles.hint.classList.toggle('hidden',arr.length>0); }
+  function updateBanner(tab){ const arr=data[tab]||[]; const soon=arr.filter(r=>isDueSoon(r.renewalDate)).length; const exp=arr.filter(r=>isPast(r.renewalDate)).length; const el=tab==='home'?home.banner:tab==='vehicles'?vehicles.banner:null; if(!el) return; if(soon||exp){ const parts=[]; if(soon) parts.push(`${soon} due within 7 days`); if(exp) parts.push(`${exp} expired`); el.textContent='Heads up: '+parts.join(' · '); el.classList.remove('hidden'); } else { el.classList.add('hidden'); el.textContent=''; } }
 
   function makeIcs(rec){
     const title = rec.title || 'LifeSafe Renewal';
     const desc = (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||'');
-    const dt = rec.renewalDate; // YYYY-MM-DD
-    if(!dt) return null;
-    // All-day event
+    const dt = rec.renewalDate; if(!dt) return null;
     const dtstamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
-    const dtstart = dt.replace(/-/g,''); // YYYYMMDD
+    const dtstart = dt.replace(/-/g,'');
     const uid = `${dtstart}-${rec.id||''}-lifesafe`;
     const content = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//LifeSafe//V1.10b//EN',
-      'BEGIN:VEVENT',
-      `UID:${uid}`,
-      `DTSTAMP:${dtstamp}`,
-      `DTSTART;VALUE=DATE:${dtstart}`,
-      `SUMMARY:${title}`,
-      `DESCRIPTION:${desc}`,
-      'BEGIN:VALARM',
-      'TRIGGER:-P1W',
-      'ACTION:DISPLAY',
-      'DESCRIPTION:Renewal due soon',
-      'END:VALARM',
-      'END:VEVENT',
-      'END:VCALENDAR'
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LifeSafe//V1.10c//EN','BEGIN:VEVENT',
+      `UID:${uid}`,`DTSTAMP:${dtstamp}`,`DTSTART;VALUE=DATE:${dtstart}`,`SUMMARY:${title}`,`DESCRIPTION:${desc}`,
+      'BEGIN:VALARM','TRIGGER:-P1W','ACTION:DISPLAY','DESCRIPTION:Renewal due soon','END:VALARM',
+      'END:VEVENT','END:VCALENDAR'
     ].join('\r\n');
-    return {content, fileName: `${(title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'')}-${rec.renewalDate}.ics`};
+    const fileName = `${(title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'')}-${rec.renewalDate}.ics`;
+    return {content,fileName};
   }
 
-  // iOS/Safari helpers
-  function isIOS(){
-    return /iP(ad|hone|od)/.test(navigator.userAgent) || 
-           (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-  }
-  function isSafari(){
-    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  // iOS/Safari checks
+  function isIOS(){ return /iP(ad|hone|od)/.test(navigator.userAgent) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document); }
+  function isSafari(){ return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
+
+  function openGoogleCalendar(rec){
+    // All-day event template: dates=YYYYMMDD/YYYYMMDD
+    if(!rec.renewalDate) return;
+    const start = rec.renewalDate.replace(/-/g,'');
+    const end = start; // all-day single day
+    const params = new URLSearchParams({
+      action:'TEMPLATE',
+      text: rec.title || 'LifeSafe Renewal',
+      details: (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||''),
+      dates: `${start}/${end}`
+    });
+    window.open(`https://calendar.google.com/calendar/render?${params.toString()}`,'_blank','noopener');
   }
 
   async function downloadIcs(rec){
     if(!rec.renewalDate) return;
-    const made = makeIcs(rec);
-    if(!made) return;
-    const {content, fileName} = made;
+    const made = makeIcs(rec); if(!made) return;
+    const {content,fileName} = made;
 
-    // Best UX: Web Share API with File (iOS 15+)
+    // 1) Try Web Share + File (iOS 15+)
     try{
-      const supportsFiles = !!(navigator.canShare && navigator.canShare({ files: [new File([""], "a.txt")] }));
+      const testFile = new File(['x'],'x.txt',{type:'text/plain'});
+      const supportsFiles = !!(navigator.canShare && navigator.canShare({ files:[testFile] }));
       if(navigator.share && supportsFiles){
         const file = new File([content], fileName, { type: 'text/calendar' });
-        await navigator.share({ files:[file], title:'Add to Calendar', text: 'LifeSafe renewal reminder' });
+        await navigator.share({ files:[file], title:'Add to Calendar' });
         return;
       }
-    }catch(e){ /* fall through */ }
+    }catch(e){ /* ignore and fallback */ }
 
-    // iOS Safari fallback: open data: URL in a new tab so user can "Open in Calendar"
+    // 2) iOS/Safari: open Blob URL directly (not data:), which often triggers Calendar open sheet
     if(isIOS() && isSafari()){
-      const dataUri = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content);
-      window.open(dataUri, '_blank', 'noopener');
+      const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      window.location.href = url;
+      // Don't revoke immediately; give Safari time
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
       return;
     }
 
-    // Default: Blob download
+    // 3) Default: download via anchor + Blob
     const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -208,12 +151,8 @@
       const meta=document.createElement('div'); meta.className='meta';
       const badge=document.createElement('span'); badge.className='badge'; badge.textContent=rec.type || 'General';
       meta.appendChild(badge);
-      // due soon chip
       const n = daysUntil(rec.renewalDate);
-      if(n>=0 && n<=7){
-        const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${n}d)`;
-        meta.appendChild(chip);
-      }
+      if(n>=0 && n<=7){ const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${n}d)`; meta.appendChild(chip); }
       const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc || '';
 
       const dates=document.createElement('div'); dates.className='dates';
@@ -224,15 +163,18 @@
         dates.appendChild(ln2);
       }
 
-      const calBtn=document.createElement('button'); calBtn.className='btn small ghost'; calBtn.textContent='Add to Calendar';
+      const calBtn=document.createElement('button'); calBtn.className='btn small ghost'; calBtn.textContent='Add to Calendar (.ics)';
       calBtn.onclick=(e)=>{ e.stopPropagation(); downloadIcs(rec); };
+
+      const gcalBtn=document.createElement('button'); gcalBtn.className='btn small ghost'; gcalBtn.textContent='Add to Google Calendar';
+      gcalBtn.onclick=(e)=>{ e.stopPropagation(); openGoogleCalendar(rec); };
 
       const editBtn=document.createElement('button'); editBtn.className='btn small ghost'; editBtn.textContent='Edit';
       editBtn.onclick=(e)=>{ e.stopPropagation(); startEdit(tabId, rec.id); };
       const delBtn=document.createElement('button'); delBtn.className='btn small danger'; delBtn.textContent='Delete';
       delBtn.onclick=(e)=>{ e.stopPropagation(); remove(tabId, rec.id); };
 
-      right.appendChild(calBtn); right.appendChild(editBtn); right.appendChild(delBtn);
+      right.appendChild(calBtn); right.appendChild(gcalBtn); right.appendChild(editBtn); right.appendChild(delBtn);
       left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d); if(rec.startDate||rec.renewalDate) left.appendChild(dates);
       top.appendChild(left); top.appendChild(right);
       card.appendChild(top);
@@ -315,23 +257,13 @@
 
   // Save (add or edit) -> uses current activeTab for destination
   saveBtn.addEventListener('click', ()=>{
-    const payload={
-      title: fTitle.value.trim(),
-      type: fType.value.trim(),
-      desc: fDesc.value.trim(),
-      startDate: fStart.value || '',
-      renewalDate: fRenewal.value || '',
-      createdAt: new Date().toISOString()
-    };
+    const payload={ title:fTitle.value.trim(), type:fType.value.trim(), desc:fDesc.value.trim(), startDate:fStart.value||'', renewalDate:fRenewal.value||'', createdAt:new Date().toISOString() };
     if(editingId){
-      const arr=data[editingId.tab]||[];
-      const idx=arr.findIndex(r=>r.id===editingId.id);
-      if(idx>-1){ arr[idx]={...arr[idx], ...payload}; }
-      if(viewing.tab===editingId.tab && viewing.id===editingId.id){ renderDetail(editingId.tab, arr[idx]); }
-      data[editingId.tab]=arr;
+      const arr=data[editingId.tab]||[]; const idx=arr.findIndex(r=>r.id===editingId.id);
+      if(idx>-1){ arr[idx]={...arr[idx], ...payload}; if(viewing.tab===editingId.tab && viewing.id===editingId.id){ renderDetail(editingId.tab, arr[idx]); } data[editingId.tab]=arr; }
     }else{
       const id = Date.now().toString(36);
-      data[activeTab]=[ { id, ...payload }, ...(data[activeTab]||[]) ];
+      data[activeTab]=[{id, ...payload}, ...(data[activeTab]||[])];
     }
     save(); renderList(activeTab); updateBanner(activeTab); closeModal();
   });
@@ -347,22 +279,19 @@
     detailWrap.innerHTML='';
     const card=document.createElement('div'); card.className='detailCard';
     const titleEl=document.createElement('h3'); titleEl.className='detailTitle'; titleEl.textContent=rec.title||'(Untitled)';
-    const meta=document.createElement('div'); meta.className='detailMeta';
-    meta.textContent=(rec.type||'General')+' • '+tabId[0].toUpperCase()+tabId.slice(1);
+    const meta=document.createElement('div'); meta.className='detailMeta'; meta.textContent=(rec.type||'General')+' • '+tabId[0].toUpperCase()+tabId.slice(1);
     const desc=document.createElement('div'); desc.className='detailDesc'; desc.textContent=rec.desc||'';
     const dates=document.createElement('div'); dates.className='detailDates';
     if(rec.startDate){ dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start Date: '+formatDate(rec.startDate)})); }
     if(rec.renewalDate){
-      const n = daysUntil(rec.renewalDate);
+      const n=daysUntil(rec.renewalDate);
       const ln=document.createElement('div'); ln.textContent='Renewal Date: '+formatDate(rec.renewalDate);
-      if(n>=0 && n<=7){ ln.textContent += `  (due in ${n}d)`; }
+      if(n>=0 && n<=7) ln.textContent += `  (due in ${n}d)`;
       if(n<0){ ln.textContent += '  ❗'; ln.classList.add('expired'); }
       dates.appendChild(ln);
     }
     card.appendChild(titleEl); card.appendChild(meta); if(desc.textContent) card.appendChild(desc); if(rec.startDate||rec.renewalDate) card.appendChild(dates);
     detailWrap.appendChild(card);
-
-    // Wire up calendar button
     calendarFromDetail.onclick=()=>downloadIcs(rec);
   }
 
@@ -370,12 +299,11 @@
   function showMain(){ detail.classList.add('hidden'); detailWrap.innerHTML=''; viewing={tab:null,id:null}; main.classList.remove('hidden'); }
 
   backBtn.addEventListener('click', showMain);
-  editFromDetail.addEventListener('click', ()=>{ if(viewing.tab && viewing.id) startEdit(viewing.tab, viewing.id); });
-  deleteFromDetail.addEventListener('click', ()=>{ if(viewing.tab && viewing.id) remove(viewing.tab, viewing.id); });
+  editFromDetail.addEventListener('click', ()=>{ if(viewing.tab&&viewing.id) startEdit(viewing.tab, viewing.id); });
+  deleteFromDetail.addEventListener('click', ()=>{ if(viewing.tab&&viewing.id) remove(viewing.tab, viewing.id); });
 
   // Init
   load();
-  // First render
   ['home','vehicles'].forEach(id=>{ toggleHintFor(id); updateBanner(id); });
   renderList('home');
 })();
