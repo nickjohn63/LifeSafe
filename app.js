@@ -59,17 +59,20 @@
   function toggleHintFor(tab){ const arr=data[tab]||[]; if(tab==='home'&&home.hint) home.hint.classList.toggle('hidden',arr.length>0); if(tab==='vehicles'&&vehicles.hint) vehicles.hint.classList.toggle('hidden',arr.length>0); }
   function updateBanner(tab){ const arr=data[tab]||[]; const soon=arr.filter(r=>isDueSoon(r.renewalDate)).length; const exp=arr.filter(r=>isPast(r.renewalDate)).length; const el=tab==='home'?home.banner:tab==='vehicles'?vehicles.banner:null; if(!el) return; if(soon||exp){ const parts=[]; if(soon) parts.push(`${soon} due within 7 days`); if(exp) parts.push(`${exp} expired`); el.textContent='Heads up: '+parts.join(' · '); el.classList.remove('hidden'); } else { el.classList.add('hidden'); el.textContent=''; } }
 
+  // Build ICS as a timed event at 09:00 local, 1 hour, with -P1W alarm
   function makeIcs(rec){
     const title = rec.title || 'LifeSafe Renewal';
     const desc = (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||'');
     const dt = rec.renewalDate; if(!dt) return null;
     const dtstamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
-    const dtstart = dt.replace(/-/g,'');
+    const ymd = dt.replace(/-/g,''); // YYYYMMDD
+    const dtstart = ymd + 'T090000'; // 09:00 local (floating time)
+    const dtend   = ymd + 'T100000'; // 1 hour
     const uid = `${dtstart}-${rec.id||''}-lifesafe`;
     const content = [
-      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LifeSafe//V1.10c//EN','BEGIN:VEVENT',
-      `UID:${uid}`,`DTSTAMP:${dtstamp}`,`DTSTART;VALUE=DATE:${dtstart}`,`SUMMARY:${title}`,`DESCRIPTION:${desc}`,
-      'BEGIN:VALARM','TRIGGER:-P1W','ACTION:DISPLAY','DESCRIPTION:Renewal due soon','END:VALARM',
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LifeSafe//V1.10d//EN','BEGIN:VEVENT',
+      `UID:${uid}`,`DTSTAMP:${dtstamp}`,`DTSTART:${dtstart}`,`DTEND:${dtend}`,`SUMMARY:${title}`,`DESCRIPTION:${desc}`,
+      'BEGIN:VALARM','TRIGGER:-P1W','ACTION:DISPLAY','DESCRIPTION:Renewal due in 1 week','END:VALARM',
       'END:VEVENT','END:VCALENDAR'
     ].join('\r\n');
     const fileName = `${(title||'Renewal').replace(/[^a-z0-9]+/gi,'-').replace(/(^-|-$)/g,'')}-${rec.renewalDate}.ics`;
@@ -81,10 +84,9 @@
   function isSafari(){ return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
 
   function openGoogleCalendar(rec){
-    // All-day event template: dates=YYYYMMDD/YYYYMMDD
     if(!rec.renewalDate) return;
     const start = rec.renewalDate.replace(/-/g,'');
-    const end = start; // all-day single day
+    const end = start;
     const params = new URLSearchParams({
       action:'TEMPLATE',
       text: rec.title || 'LifeSafe Renewal',
@@ -99,7 +101,7 @@
     const made = makeIcs(rec); if(!made) return;
     const {content,fileName} = made;
 
-    // 1) Try Web Share + File (iOS 15+)
+    // 1) Web Share + File (best on iOS 15+)
     try{
       const testFile = new File(['x'],'x.txt',{type:'text/plain'});
       const supportsFiles = !!(navigator.canShare && navigator.canShare({ files:[testFile] }));
@@ -108,19 +110,18 @@
         await navigator.share({ files:[file], title:'Add to Calendar' });
         return;
       }
-    }catch(e){ /* ignore and fallback */ }
+    }catch(e){ /* ignore */ }
 
-    // 2) iOS/Safari: open Blob URL directly (not data:), which often triggers Calendar open sheet
+    // 2) iOS Safari: open Blob URL directly to trigger Calendar handler
     if(isIOS() && isSafari()){
       const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
       const url = URL.createObjectURL(blob);
       window.location.href = url;
-      // Don't revoke immediately; give Safari time
       setTimeout(()=>URL.revokeObjectURL(url), 60000);
       return;
     }
 
-    // 3) Default: download via anchor + Blob
+    // 3) Default: download
     const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -255,7 +256,7 @@
   closeBtn.addEventListener('click', closeModal);
   overlay.addEventListener('click', closeModal);
 
-  // Save (add or edit) -> uses current activeTab for destination
+  // Save (add or edit)
   saveBtn.addEventListener('click', ()=>{
     const payload={ title:fTitle.value.trim(), type:fType.value.trim(), desc:fDesc.value.trim(), startDate:fStart.value||'', renewalDate:fRenewal.value||'', createdAt:new Date().toISOString() };
     if(editingId){
