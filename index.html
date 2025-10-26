@@ -1,30 +1,36 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LifeSafe</title>
-    <link rel="icon" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css?v=102b">
+    <link rel="icon" href="favicon.svg" />
+    <link rel="stylesheet" href="styles.css?v=103" />
   </head>
   <body>
     <div id="app" class="app">
+      <!-- Splash -->
       <div id="splash" class="phone">
         <div class="statusbar"></div>
         <div class="splash">
-          <div class="logo"><img src="favicon.svg" alt=""></div>
+          <div class="logo"><img src="favicon.svg" alt="" /></div>
           <h1>LifeSafe</h1>
-          <div class="version">v1.02b</div>
+          <div class="version">v1.03</div>
         </div>
       </div>
+
+      <!-- Main app -->
       <div id="main" class="phone hidden">
         <div class="statusbar"></div>
         <header class="header">
           <div class="title">LifeSafe</div>
-          <div class="tabs" id="tabs"></div>
+          <div id="tabs" class="tabs"></div>
         </header>
+
         <main class="content">
           <h2 id="activeTitle" class="homeTitle">Home</h2>
+
+          <!-- Home tab -->
           <section id="homeContent" class="section">
             <button id="addBtnHome" class="btn add full pill">+ Add Record</button>
             <div class="hint">
@@ -33,6 +39,8 @@
             </div>
             <div class="list placeholder"></div>
           </section>
+
+          <!-- Other tabs (centered 'Empty') -->
           <section id="vehiclesContent" class="section hidden centerText">Empty</section>
           <section id="healthContent" class="section hidden centerText">Empty</section>
           <section id="financeContent" class="section hidden centerText">Empty</section>
@@ -42,6 +50,36 @@
         </main>
       </div>
     </div>
-    <script src="app.js?v=102b"></script>
+
+    <!-- Modal (V1.03) -->
+    <div id="overlay" class="overlay hidden"></div>
+    <div id="modal" class="modal hidden" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
+      <div class="modalHeader">
+        <div id="modalTitle" class="modalTitle">Add Record</div>
+        <button id="closeModal" class="iconBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="modalBody">
+        <label class="field">
+          <span class="label">Title</span>
+          <input id="fTitle" class="input" type="text" placeholder="e.g., Home Insurance – Aviva" />
+        </label>
+
+        <label class="field">
+          <span class="label">Type</span>
+          <input id="fType" class="input" type="text" placeholder="e.g., Insurance, Council Tax, MOT" />
+        </label>
+
+        <label class="field">
+          <span class="label">Description</span>
+          <textarea id="fDesc" class="input textarea" rows="4" placeholder="Short description..."></textarea>
+        </label>
+      </div>
+
+      <div class="modalFooter">
+        <button id="saveRecord" class="btn add full pill">Save</button>
+      </div>
+    </div>
+
+    <script src="app.js?v=103"></script>
   </body>
 </html>
