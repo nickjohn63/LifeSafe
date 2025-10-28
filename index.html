@@ -1,124 +1,157 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LifeSafe</title>
-    <link rel="icon" href="favicon.svg" />
-    <link rel="stylesheet" href="styles.css?v=110" />
-  </head>
-  <body>
-    <div id="app" class="app">
-      <!-- Splash -->
-      <div id="splash" class="phone">
-        <div class="statusbar"></div>
-        <div class="splash">
-          <div class="logo"><img src="favicon.svg" alt="" /></div>
-          <h1>LifeSafe</h1>
-          <div class="version">v1.11</div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LifeSafe • V1.12</title>
+  <link rel="icon" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css?v=1120" />
+</head>
+<body>
+  <!-- Splash -->
+  <div id="splash" class="splash">
+    <div class="logo">LifeSafe</div>
+    <div class="tag">Your household hub</div>
+    <div class="ver">Version <strong>1.12</strong></div>
+  </div>
+
+  <!-- App -->
+  <div id="main" class="app hidden">
+    <header class="appbar">
+      <div class="brand">
+        <img src="favicon.svg" class="ico" alt="" />
+        <span>LifeSafe</span>
+      </div>
+      <div class="title" id="activeTitle">Home</div>
+    </header>
+
+    <nav id="tabs" class="tabs"></nav>
+
+    <section class="content">
+      <!-- Home -->
+      <div id="homeContent">
+        <div class="banner hidden" id="homeBanner"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addBtnHome">+ Add Record</button>
         </div>
+        <div id="homeHint" class="hint">Start by adding your first record.</div>
+        <div id="homeList" class="list"></div>
       </div>
 
-      <!-- Main app (List per tab) -->
-      <div id="main" class="phone hidden">
-        <div class="statusbar"></div>
-        <header class="header">
-          <div class="title">LifeSafe</div>
-          <div id="tabs" class="tabs"></div>
-        </header>
-
-        <main class="content">
-          <h2 id="activeTitle" class="homeTitle">Home</h2>
-
-          <!-- Home tab -->
-          <section id="homeContent" class="section">
-            <div id="homeBanner" class="banner hidden"></div>
-            <button id="addBtnHome" class="btn add full pill">+ Add Record</button>
-            <div id="homeHint" class="hint">
-              <div class="hintIcon">💡</div>
-              <div class="hintText">Start organising your life — add your first record</div>
-            </div>
-            <div id="homeList" class="recordList"></div>
-          </section>
-
-          <!-- Vehicles tab -->
-          <section id="vehiclesContent" class="section hidden">
-            <div id="vehiclesBanner" class="banner hidden"></div>
-            <button id="addBtnVehicles" class="btn add full pill">+ Add Record</button>
-            <div id="vehiclesHint" class="hint">
-              <div class="hintIcon">💡</div>
-              <div class="hintText">Add your first vehicle item — e.g., MOT, Tax, Insurance</div>
-            </div>
-            <div id="vehiclesList" class="recordList"></div>
-          </section>
-
-          <!-- Other tabs (placeholders) -->
-          <section id="healthContent" class="section hidden centerText">Empty</section>
-          <section id="financeContent" class="section hidden centerText">Empty</section>
-          <section id="idsContent" class="section hidden centerText">Empty</section>
-          <section id="petsContent" class="section hidden centerText">Empty</section>
-          <section id="otherContent" class="section hidden centerText">Empty</section>
-        </main>
+      <!-- Vehicles -->
+      <div id="vehiclesContent" class="hidden">
+        <div class="banner hidden" id="vehiclesBanner"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addBtnVehicles">+ Add Record</button>
+        </div>
+        <div id="vehiclesHint" class="hint">Add MOT, insurance, tax, etc.</div>
+        <div id="vehiclesList" class="list"></div>
       </div>
 
-      <!-- Detail View screen -->
-      <div id="detail" class="phone hidden">
-        <div class="statusbar"></div>
-        <header class="header detailHeader">
-          <button id="backBtn" class="iconBtn backBtn" aria-label="Back">←</button>
-          <div class="title">Details</div>
-          <div style="width:36px;"></div>
-        </header>
-        <main class="content">
-          <div id="detailWrap" class="detailWrap"></div>
-          <div class="detailActions">
-            <button id="calendarFromDetail" class="btn ghost pill">Add to Calendar</button>
-            <button id="editFromDetail" class="btn ghost pill">Edit</button>
-            <button id="deleteFromDetail" class="btn danger pill">Delete</button>
-          </div>
-        </main>
+      <!-- Health -->
+      <div id="healthContent" class="hidden">
+        <div class="banner hidden" id="healthBanner"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addBtnHealth">+ Add Record</button>
+        </div>
+        <div id="healthHint" class="hint">Add prescriptions, checkups, etc.</div>
+        <div id="healthList" class="list"></div>
+      </div>
+
+      <!-- Finance -->
+      <div id="financeContent" class="hidden">
+        <div class="banner hidden" id="financeBanner"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addBtnFinance">+ Add Record</button>
+        </div>
+        <div id="financeHint" class="hint">Add insurance, bills, cards, etc.</div>
+        <div id="financeList" class="list"></div>
+      </div>
+
+      <!-- IDs & Docs -->
+      <div id="idsContent" class="hidden">
+        <div class="banner hidden" id="idsBanner"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addBtnIds">+ Add Record</button>
+        </div>
+        <div id="idsHint" class="hint">Add passport, licence, certificates, etc.</div>
+        <div id="idsList" class="list"></div>
+      </div>
+
+      <!-- Pets -->
+      <div id="petsContent" class="hidden">
+        <div class="banner hidden" id="petsBanner"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addBtnPets">+ Add Record</button>
+        </div>
+        <div id="petsHint" class="hint">Add vaccinations, insurance, vet, etc.</div>
+        <div id="petsList" class="list"></div>
+      </div>
+
+      <!-- Other -->
+      <div id="otherContent" class="hidden">
+        <div class="banner hidden" id="otherBanner"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addBtnOther">+ Add Record</button>
+        </div>
+        <div id="otherHint" class="hint">Add anything else you want to track.</div>
+        <div id="otherList" class="list"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Detail view -->
+  <div id="detail" class="detail hidden">
+    <header class="appbar">
+      <button id="backBtn" class="btn ghost">← Back</button>
+      <div class="title">Details</div>
+      <div></div>
+    </header>
+    <div class="detailWrap" id="detailWrap"></div>
+    <div class="detailActions">
+      <button id="calendarFromDetail" class="btn ghost">Add Reminder to Calendar</button>
+      <button id="editFromDetail" class="btn ghost">Edit</button>
+      <button id="deleteFromDetail" class="btn danger">Delete</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="overlay" class="overlay hidden"></div>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modalHeader">
+      <div class="modalTitle" id="modalTitle">Add Record</div>
+      <button id="closeModal" class="btn icon" aria-label="Close">✕</button>
+    </div>
+    <div class="modalBody">
+      <label>Title<input id="fTitle" type="text" placeholder="e.g., Home Insurance" /></label>
+      <label>Type<input id="fType" type="text" placeholder="e.g., Renewal, Insurance, MOT" /></label>
+      <label>Description<textarea id="fDesc" rows="3" placeholder="Notes…"></textarea></label>
+      <div class="grid2">
+        <label>Start Date<input id="fStart" type="date" /></label>
+        <label>Renewal Date<input id="fRenewal" type="date" /></label>
       </div>
     </div>
-
-    <!-- Modal (Add/Edit) -->
-    <div id="overlay" class="overlay hidden"></div>
-    <div id="modal" class="modal hidden" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
-      <div class="modalHeader">
-        <div id="modalTitle" class="modalTitle">Add Record</div>
-        <button id="closeModal" class="iconBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modalBody">
-        <label class="field">
-          <span class="label">Title</span>
-          <input id="fTitle" class="input" type="text" placeholder="e.g., Car Insurance – Aviva" />
-        </label>
-
-        <label class="field">
-          <span class="label">Type</span>
-          <input id="fType" class="input" type="text" placeholder="e.g., Insurance, MOT, Tax" />
-        </label>
-
-        <label class="field">
-          <span class="label">Description</span>
-          <textarea id="fDesc" class="input textarea" rows="4" placeholder="Short description..."></textarea>
-        </label>
-
-        <label class="field">
-          <span class="label">Start Date</span>
-          <input id="fStart" class="input" type="date" />
-        </label>
-
-        <label class="field">
-          <span class="label">Renewal Date</span>
-          <input id="fRenewal" class="input" type="date" />
-        </label>
-      </div>
-
-      <div class="modalFooter">
-        <button id="saveRecord" class="btn add full pill">Save</button>
-      </div>
+    <div class="modalActions">
+      <button id="saveRecord" class="btn primary">Save</button>
     </div>
+  </div>
 
-    <script src="app.js?v=1110"></script>
-  </body>
+  <!-- Delete Confirm Popup -->
+  <div id="confirmOverlay" class="overlay hidden"></div>
+  <div id="confirmPopup" class="confirm hidden" role="dialog" aria-modal="true">
+    <div class="confirmHeader">
+      <span class="warnIcon">⚠️</span>
+      <span>Delete this record?</span>
+    </div>
+    <div class="confirmBody">
+      This will permanently remove it. Any calendar reminders won’t be removed automatically.
+    </div>
+    <div class="confirmActions">
+      <button id="confirmCancel" class="btn ghost">Cancel</button>
+      <button id="confirmDelete" class="btn danger">Delete</button>
+    </div>
+  </div>
+
+  <script src="app.js?v=1120"></script>
+</body>
 </html>
