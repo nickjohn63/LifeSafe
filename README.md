@@ -1,10 +1,11 @@
-# LifeSafe v1.12 (Static)
+# LifeSafe v1.14-Light
 
-- Delete confirmation popup added (styled, yellow header). Shows **every time** you delete from list or detail view.
-- Google Calendar‑only flow: "Add Reminder to Calendar" opens Google Calendar at 10:00–11:00 on the Renewal Date.
-- LocalStorage keeps data.
-- Tabs enabled: Home, Vehicles, Health, Finance, IDs & Docs, Pets, Other.
-- Splash shows **Version 1.12**.
+**Locked visual design:** light grey background, pastel blue header, rounded white cards, system font.
 
-## Deploy (GitHub Pages)
-Upload these files to your repo root and enable Pages (Deploy from branch → main → /(root)).
+## New in v1.14
+- Added **Uploads** tab (preview) — pick files, we store **file metadata** (name, type, size, modified) in **LocalStorage**.
+- Each file shows a **Not synced** badge (cloud sync not yet enabled).
+- All previous tabs and features intact (records, edit/delete with warning popup, Google Calendar 10:00).
+
+## Deploy
+Upload all files to your repo root and refresh GitHub Pages.

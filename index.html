@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LifeSafe • V1.12-Light</title>
+  <title>LifeSafe • V1.14-Light</title>
   <link rel="icon" href="favicon.svg" />
-  <link rel="stylesheet" href="styles.css?v=112L" />
+  <link rel="stylesheet" href="styles.css?v=114L" />
 </head>
 <body>
   <!-- Splash -->
   <div id="splash" class="splash">
     <div class="logo">LifeSafe</div>
     <div class="tag">Your household hub</div>
-    <div class="ver">Version <strong>1.12</strong> • Light</div>
+    <div class="ver">Version <strong>1.14</strong> • Light</div>
   </div>
 
   <!-- App -->
@@ -98,6 +98,17 @@
         <div id="otherHint" class="hint">Add anything else you want to track.</div>
         <div id="otherList" class="list"></div>
       </div>
+
+      <!-- Uploads -->
+      <div id="uploadsContent" class="hidden">
+        <div class="banner" id="uploadsBanner">Uploads hub (preview): files listed here are <strong>not</strong> synced yet. Firebase coming soon.</div>
+        <div class="toolbar">
+          <input id="filePicker" type="file" multiple class="hidden" />
+          <button class="btn primary" id="addBtnUploads">+ Add Document</button>
+        </div>
+        <div id="uploadsHint" class="hint">Add scans/photos of policies, MOTs, certificates, etc.</div>
+        <div id="uploadsList" class="list"></div>
+      </div>
     </section>
   </div>
 
@@ -153,6 +164,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=112L"></script>
+  <script src="app.js?v=114L"></script>
 </body>
 </html>

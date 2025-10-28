@@ -1,4 +1,4 @@
-/* LifeSafe Light Theme (V1.12-Light) */
+/* LifeSafe Light Theme (V1.14-Light) — locked design */
 :root{
   --bg:#f3f5f8; --panel:#ffffff; --muted:#667085; --text:#1f2937; --line:#e5e7eb;
   --primary:#8ec8ff; --primary-deep:#4aa3ff; --danger:#d92d20;
@@ -27,6 +27,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-ap
 .cardTitle{margin:.1rem 0 .25rem 0;font-size:1.05rem}
 .meta{display:flex;flex-wrap:wrap;gap:.5rem;margin:.25rem 0;color:#0b2a4a}
 .badge{background:#eef6ff;border:1px solid #cfe2ff;color:#0b2a4a;font-size:.75rem;padding:.15rem .45rem;border-radius:999px}
+.badge.pending{background:#fff4db;border:1px solid #ffd89a;color:#7a5800}
 .dueSoon{background:#fff4c2;border:1px solid #f7d248;color:#7a5800;font-size:.75rem;padding:.15rem .45rem;border-radius:999px}
 .desc{color:#374151;margin:.35rem 0}
 .dates{color:#475467;font-size:.9rem;display:grid;gap:.2rem}
@@ -63,4 +64,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-ap
 .warnIcon{font-size:1rem}
 .confirmBody{padding:1rem;color:#344054}
 .confirmActions{display:flex;justify-content:flex-end;gap:.5rem;padding:0 1rem 1rem}
+.fileMeta{color:#475467;font-size:.9rem;display:grid;gap:.2rem}
+.filename{font-weight:600}
+.smallNote{color:#667085;font-size:.85rem}
 @media (max-width:900px){.tabs{grid-template-columns:repeat(3,1fr)} .grid2{grid-template-columns:1fr;}}
