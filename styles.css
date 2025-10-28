@@ -1,6 +1,6 @@
 /* LifeSafe minimal styles */
 :root{
-  --bg:#0b0c10; --panel:#14161b; --muted:#aeb4c0; --text:#eef2f7;
+  --bg:#f4f5f7; --panel:#14161b; --muted:#aeb4c0; --text:#eef2f7;
   --accent:#5dd0ff; --accent-2:#7df7b9; --danger:#ff6b6b;
   --warn:#fff3c4; --warn-border:#ffe08a;
 }
