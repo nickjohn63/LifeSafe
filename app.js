@@ -1,5 +1,4 @@
 (function(){
-  // Tabs
   const tabs=[
     {id:'home',label:'Home',content:'homeContent'},
     {id:'vehicles',label:'Vehicles',content:'vehiclesContent'},
@@ -9,325 +8,87 @@
     {id:'pets',label:'Pets',content:'petsContent'},
     {id:'other',label:'Other',content:'otherContent'}
   ];
-
-  // Elements
-  const splash=document.getElementById('splash');
-  const main=document.getElementById('main');
-  const detail=document.getElementById('detail');
-  const tabsEl=document.getElementById('tabs');
-  const title=document.getElementById('activeTitle');
-
-  // Per-tab refs
+  const byId=(id)=>document.getElementById(id);
+  const splash=byId('splash'), main=byId('main'), detail=byId('detail'), tabsEl=byId('tabs'), titleEl=byId('activeTitle');
   const refs={
-    home:{ root:byId('homeContent'), addBtn:byId('addBtnHome'), hint:byId('homeHint'), banner:byId('homeBanner'), list:byId('homeList') },
-    vehicles:{ root:byId('vehiclesContent'), addBtn:byId('addBtnVehicles'), hint:byId('vehiclesHint'), banner:byId('vehiclesBanner'), list:byId('vehiclesList') },
-    health:{ root:byId('healthContent'), addBtn:byId('addBtnHealth'), hint:byId('healthHint'), banner:byId('healthBanner'), list:byId('healthList') },
-    finance:{ root:byId('financeContent'), addBtn:byId('addBtnFinance'), hint:byId('financeHint'), banner:byId('financeBanner'), list:byId('financeList') },
-    ids:{ root:byId('idsContent'), addBtn:byId('addBtnIds'), hint:byId('idsHint'), banner:byId('idsBanner'), list:byId('idsList') },
-    pets:{ root:byId('petsContent'), addBtn:byId('addBtnPets'), hint:byId('petsHint'), banner:byId('petsBanner'), list:byId('petsList') },
-    other:{ root:byId('otherContent'), addBtn:byId('addBtnOther'), hint:byId('otherHint'), banner:byId('otherBanner'), list:byId('otherList') }
+    home:{addBtn:byId('addBtnHome'),list:byId('homeList'),hint:byId('homeHint'),banner:byId('homeBanner')},
+    vehicles:{addBtn:byId('addBtnVehicles'),list:byId('vehiclesList'),hint:byId('vehiclesHint'),banner:byId('vehiclesBanner')},
+    health:{addBtn:byId('addBtnHealth'),list:byId('healthList'),hint:byId('healthHint'),banner:byId('healthBanner')},
+    finance:{addBtn:byId('addBtnFinance'),list:byId('financeList'),hint:byId('financeHint'),banner:byId('financeBanner')},
+    ids:{addBtn:byId('addBtnIds'),list:byId('idsList'),hint:byId('idsHint'),banner:byId('idsBanner')},
+    pets:{addBtn:byId('addBtnPets'),list:byId('petsList'),hint:byId('petsHint'),banner:byId('petsBanner')},
+    other:{addBtn:byId('addBtnOther'),list:byId('otherList'),hint:byId('otherHint'),banner:byId('otherBanner')},
   };
+  const overlay=byId('overlay'), modal=byId('modal'), closeBtn=byId('closeModal');
+  const fTitle=byId('fTitle'), fType=byId('fType'), fDesc=byId('fDesc'), fStart=byId('fStart'), fRenewal=byId('fRenewal'), saveBtn=byId('saveRecord');
+  const detailWrap=byId('detailWrap'), backBtn=byId('backBtn'), editFromDetail=byId('editFromDetail'), delFromDetail=byId('deleteFromDetail'), calFromDetail=byId('calendarFromDetail');
+  const cOv=byId('confirmOverlay'), cPop=byId('confirmPopup'), cCancel=byId('confirmCancel'), cDelete=byId('confirmDelete');
 
-  // Detail view
-  const detailWrap=byId('detailWrap');
-  const backBtn=byId('backBtn');
-  const editFromDetail=byId('editFromDetail');
-  const deleteFromDetail=byId('deleteFromDetail');
-  const calendarFromDetail=byId('calendarFromDetail');
+  const STORAGE='lifesafe_light_v112';
+  let data={home:[],vehicles:[],health:[],finance:[],ids:[],pets:[],other:[]};
+  let active='home', editing=null, viewing=null, pendingDel=null;
 
-  // Modal
-  const overlay=byId('overlay');
-  const modal=byId('modal');
-  const closeBtn=byId('closeModal');
-  const fTitle=byId('fTitle');
-  const fType=byId('fType');
-  const fDesc=byId('fDesc');
-  const fStart=byId('fStart');
-  const fRenewal=byId('fRenewal');
-  const saveBtn=byId('saveRecord');
-  const modalTitle=byId('modalTitle');
+  function load(){try{const raw=localStorage.getItem(STORAGE); if(raw) data={...data,...(JSON.parse(raw)||{})};}catch(e){}}
+  function save(){try{localStorage.setItem(STORAGE, JSON.stringify(data));}catch(e){}}
+  function fmtDate(v){if(!v) return ''; try{return new Date(v+'T00:00:00').toLocaleDateString();}catch(e){return v;}}
+  function daysTo(v){if(!v) return Infinity; const t=new Date();t.setHours(0,0,0,0);const d=new Date(v+'T00:00:00');return Math.floor((d-t)/86400000);}
+  function past(v){return daysTo(v)<0;}
+  function soon(v){const n=daysTo(v);return n>=0&&n<=7;}
 
-  // Confirm popup
-  const cOverlay=byId('confirmOverlay');
-  const cPopup=byId('confirmPopup');
-  const cCancel=byId('confirmCancel');
-  const cDelete=byId('confirmDelete');
+  function toggleHint(tab){ const r=refs[tab]; if(!r) return; r.hint?.classList.toggle('hidden',(data[tab]||[]).length>0); }
+  function banner(tab){ const r=refs[tab],arr=data[tab]||[]; const soonN=arr.filter(x=>soon(x.renewalDate)).length; const expN=arr.filter(x=>past(x.renewalDate)).length; if(!r||!r.banner) return; if(soonN||expN){ r.banner.textContent='Heads up: '+[soonN?`${soonN} due within 7 days`:null,expN?`${expN} expired`:null].filter(Boolean).join(' · '); r.banner.classList.remove('hidden'); } else { r.banner.classList.add('hidden'); r.banner.textContent=''; } }
 
-  // Storage
-  const STORAGE_KEY='lifesafe_tabbed_records_v112';
-  let data={ home:[], vehicles:[], health:[], finance:[], ids:[], pets:[], other:[] };
+  function openModal(mode){ overlay.classList.remove('hidden'); modal.classList.remove('hidden'); requestAnimationFrame(()=>{overlay.classList.add('show'); modal.classList.add('show');}); if(mode==='edit'){ } else { editing=null; fTitle.value=''; fType.value=''; fDesc.value=''; fStart.value=''; fRenewal.value=''; } }
+  function closeModal(){ overlay.classList.remove('show'); modal.classList.remove('show'); setTimeout(()=>{overlay.classList.add('hidden'); modal.classList.add('hidden');},150); }
 
-  // State
-  let activeTab='home';
-  let editingId=null;
-  let viewing={ tab:null, id:null };
-  let pendingDelete=null; // {tab,id} for confirm
-
-  // Helpers
-  function byId(id){ return document.getElementById(id); }
-  function load(){
-    try{
-      const raw=localStorage.getItem(STORAGE_KEY);
-      if(raw){ const parsed=JSON.parse(raw)||{}; data={...data, ...parsed}; }
-    }catch(e){}
-  }
-  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
-  function formatDate(val){
-    if(!val) return '';
-    try{ const d=new Date(val+'T00:00:00'); return d.toLocaleDateString(); }catch(e){ return val; }
-  }
-  function daysUntil(val){
-    if(!val) return Infinity;
-    const today=new Date(); today.setHours(0,0,0,0);
-    const d=new Date(val+'T00:00:00');
-    return Math.floor((d - today)/(1000*60*60*24));
-  }
-  function isPast(val){ return daysUntil(val) < 0; }
-  function isDueSoon(val){ const n=daysUntil(val); return n>=0 && n<=7; }
-
-  function toggleHintFor(tabId){
-    const arr=data[tabId]||[];
-    const r=refs[tabId];
-    if(!r) return;
-    if(r.hint) r.hint.classList.toggle('hidden', arr.length>0);
-  }
-  function updateBanner(tabId){
-    const arr=data[tabId]||[];
-    const soon = arr.filter(r=>isDueSoon(r.renewalDate)).length;
-    const exp  = arr.filter(r=>isPast(r.renewalDate)).length;
-    const el = refs[tabId]?.banner;
-    if(!el) return;
-    if(soon>0 || exp>0){
-      const parts=[];
-      if(soon>0) parts.push(`${soon} due within 7 days`);
-      if(exp>0) parts.push(`${exp} expired`);
-      el.textContent = `Heads up: ` + parts.join(" · ");
-      el.classList.remove('hidden');
-    }else{
-      el.classList.add('hidden');
-      el.textContent='';
-    }
-  }
-
-  function openConfirm(tabId,id){
-    pendingDelete={tab:tabId,id};
-    cOverlay.classList.remove('hidden');
-    cPopup.classList.remove('hidden');
-    requestAnimationFrame(()=>{ cOverlay.classList.add('show'); cPopup.classList.add('show'); });
-  }
-  function closeConfirm(){
-    cOverlay.classList.remove('show'); cPopup.classList.remove('show');
-    setTimeout(()=>{ cOverlay.classList.add('hidden'); cPopup.classList.add('hidden'); }, 150);
-    pendingDelete=null;
-  }
+  function openConfirm(tab,id){ pendingDel={tab,id}; cOv.classList.remove('hidden'); cPop.classList.remove('hidden'); requestAnimationFrame(()=>{cOv.classList.add('show'); cPop.classList.add('show');}); }
+  function closeConfirm(){ cOv.classList.remove('show'); cPop.classList.remove('show'); setTimeout(()=>{cOv.classList.add('hidden'); cPop.classList.add('hidden');},150); pendingDel=null; }
   cCancel.addEventListener('click', closeConfirm);
-  cOverlay.addEventListener('click', closeConfirm);
-  cDelete.addEventListener('click', ()=>{
-    if(!pendingDelete) return;
-    reallyRemove(pendingDelete.tab, pendingDelete.id);
-    closeConfirm();
-  });
+  cOv.addEventListener('click', closeConfirm);
+  cDelete.addEventListener('click', ()=>{ if(!pendingDel) return; reallyRemove(pendingDel.tab,pendingDel.id); closeConfirm(); });
 
-  function makeGCalURL(rec){
-    if(!rec.renewalDate) return null;
-    const ymd = rec.renewalDate.replace(/-/g,'');
-    const start = ymd + 'T100000';
-    const end   = ymd + 'T110000';
-    const params = new URLSearchParams({
-      action:'TEMPLATE',
-      text: rec.title || 'LifeSafe Renewal',
-      details: (rec.type?`Type: ${rec.type}\n`:'') + (rec.desc||'')
-    });
-    params.set('dates', `${start}/${end}`);
-    return `https://calendar.google.com/calendar/render?${params.toString()}`;
-  }
-  function openGoogleCalendar(rec){
-    const url=makeGCalURL(rec);
-    if(url) window.open(url,'_blank','noopener');
-  }
+  function gUrl(rec){ if(!rec.renewalDate) return null; const ymd=rec.renewalDate.replace(/-/g,''); const s=ymd+'T100000', e=ymd+'T110000'; const p=new URLSearchParams({action:'TEMPLATE', text:rec.title||'LifeSafe Renewal', details:(rec.type?`Type: ${rec.type}\n`:'')+(rec.desc||'')}); p.set('dates',`${s}/${e}`); return `https://calendar.google.com/calendar/render?${p.toString()}`; }
+  function openG(rec){ const u=gUrl(rec); if(u) window.open(u,'_blank','noopener'); }
 
-  function renderList(tabId){
-    const r=refs[tabId]; if(!r) return;
-    const arr=data[tabId]||[];
-    r.list.innerHTML='';
-    toggleHintFor(tabId);
-    updateBanner(tabId);
-    if(arr.length===0){
-      const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
-      r.list.appendChild(empty); return;
-    }
+  function renderList(tab){
+    const r=refs[tab], arr=data[tab]||[]; r.list.innerHTML=''; toggleHint(tab); banner(tab);
+    if(arr.length===0){ const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet'; r.list.appendChild(empty); return; }
     arr.forEach(rec=>{
       const card=document.createElement('div'); card.className='card';
       const top=document.createElement('div'); top.className='cardTop';
-      const left=document.createElement('div');
-      const right=document.createElement('div'); right.className='actions';
-
-      const h=document.createElement('h3'); h.className='cardTitle'; h.textContent=rec.title || '(Untitled)';
-      const meta=document.createElement('div'); meta.className='meta';
-      const badge=document.createElement('span'); badge.className='badge'; badge.textContent=rec.type || 'General';
-      meta.appendChild(badge);
-      const n = daysUntil(rec.renewalDate);
-      if(n>=0 && n<=7){
-        const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${n}d)`;
-        meta.appendChild(chip);
-      }
-      const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc || '';
-
+      const left=document.createElement('div'); const right=document.createElement('div'); right.className='actions';
+      const h=document.createElement('h3'); h.className='cardTitle'; h.textContent=rec.title||'(Untitled)';
+      const meta=document.createElement('div'); meta.className='meta'; const badge=document.createElement('span'); badge.className='badge'; badge.textContent=rec.type||'General'; meta.appendChild(badge);
+      const n=daysTo(rec.renewalDate); if(n>=0&&n<=7){ const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${n}d)`; meta.appendChild(chip); }
+      const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc||'';
       const dates=document.createElement('div'); dates.className='dates';
-      if(rec.startDate){ dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start: '+formatDate(rec.startDate)})); }
-      if(rec.renewalDate){
-        const ln2=document.createElement('div'); ln2.textContent='Renewal: '+formatDate(rec.renewalDate) + (isPast(rec.renewalDate)?'  ❗':'');
-        if(isPast(rec.renewalDate)) ln2.classList.add('expired');
-        dates.appendChild(ln2);
-      }
-
-      const gcBtn=document.createElement('button'); gcBtn.className='btn small ghost'; gcBtn.textContent='Add Reminder to Calendar';
-      gcBtn.onclick=(e)=>{ e.stopPropagation(); openGoogleCalendar(rec); };
-
-      const editBtn=document.createElement('button'); editBtn.className='btn small ghost'; editBtn.textContent='Edit';
-      editBtn.onclick=(e)=>{ e.stopPropagation(); startEdit(tabId, rec.id); };
-      const delBtn=document.createElement('button'); delBtn.className='btn small danger'; delBtn.textContent='Delete';
-      delBtn.onclick=(e)=>{ e.stopPropagation(); openConfirm(tabId, rec.id); };
-
-      right.appendChild(gcBtn); right.appendChild(editBtn); right.appendChild(delBtn);
+      if(rec.startDate){ dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start: '+fmtDate(rec.startDate)})); }
+      if(rec.renewalDate){ const ln=document.createElement('div'); ln.textContent='Renewal: '+fmtDate(rec.renewalDate)+(past(rec.renewalDate)?'  ❗':''); if(past(rec.renewalDate)) ln.classList.add('expired'); dates.appendChild(ln); }
+      const g=document.createElement('button'); g.className='btn small ghost'; g.textContent='Add Reminder to Calendar'; g.onclick=(e)=>{e.stopPropagation(); openG(rec);};
+      const edit=document.createElement('button'); edit.className='btn small ghost'; edit.textContent='Edit'; edit.onclick=(e)=>{e.stopPropagation(); startEdit(tab,rec.id);};
+      const del=document.createElement('button'); del.className='btn small danger'; del.textContent='Delete'; del.onclick=(e)=>{e.stopPropagation(); openConfirm(tab,rec.id);};
+      right.appendChild(g); right.appendChild(edit); right.appendChild(del);
       left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d); if(rec.startDate||rec.renewalDate) left.appendChild(dates);
-      top.appendChild(left); top.appendChild(right);
-      card.appendChild(top);
-
-      card.addEventListener('click', ()=>openDetail(tabId, rec.id));
+      top.appendChild(left); top.appendChild(right); card.appendChild(top);
+      card.addEventListener('click', ()=>openDetail(tab,rec.id));
       r.list.appendChild(card);
     });
   }
 
-  function renderActiveTab(){ renderList(activeTab); }
+  tabs.forEach(t=>{ const b=document.createElement('button'); b.id='tab-'+t.id; b.textContent=t.label; b.onclick=()=>switchTab(t.id); tabsEl.appendChild(b); });
+  function switchTab(id){ active=id; ['home','vehicles','health','finance','ids','pets','other'].forEach(t=>{ document.getElementById(t+'Content').classList.add('hidden'); document.getElementById('tab-'+t).classList.remove('active');}); document.getElementById(id+'Content').classList.remove('hidden'); document.getElementById('tab-'+id).classList.add('active'); titleEl.textContent=tabs.find(t=>t.id===id).label; renderList(id); }
 
-  // Tabs UI
-  tabs.forEach(t=>{
-    const b=document.createElement('button');
-    b.id='tab-'+t.id; b.textContent=t.label;
-    b.onclick=()=>switchTab(t.id);
-    if(t.id===activeTab) b.classList.add('active');
-    tabsEl.appendChild(b);
-  });
+  function startEdit(tab,id){ const arr=data[tab]||[]; const rec=arr.find(r=>r.id===id); if(!rec) return; editing={tab,id}; openModal('edit'); fTitle.value=rec.title||''; fType.value=rec.type||''; fDesc.value=rec.desc||''; fStart.value=rec.startDate||''; fRenewal.value=rec.renewalDate||''; }
+  saveBtn.addEventListener('click', ()=>{ const payload={title:fTitle.value.trim(),type:fType.value.trim(),desc:fDesc.value.trim(),startDate:fStart.value||'',renewalDate:fRenewal.value||'',createdAt:new Date().toISOString()}; if(editing){ const arr=data[editing.tab]; const i=arr.findIndex(r=>r.id===editing.id); if(i>-1){ arr[i]={...arr[i],...payload}; } } else { const id=Date.now().toString(36); data[active]=[{id, ...payload}, ...(data[active]||[])]; } save(); renderList(active); closeModal(); });
+  closeBtn.addEventListener('click', closeModal); overlay.addEventListener('click', closeModal);
 
-  function switchTab(id){
-    activeTab=id;
-    tabs.forEach(t=>{
-      document.getElementById(t.content).classList.add('hidden');
-      byId('tab-'+t.id).classList.remove('active');
-    });
-    const t=tabs.find(x=>x.id===id);
-    if(!t) return;
-    document.getElementById(t.content).classList.remove('hidden');
-    byId('tab-'+t.id).classList.add('active');
-    title.textContent=t.label;
-    renderActiveTab();
-  }
-
-  // Splash -> main
-  setTimeout(()=>{ splash.classList.add('hidden'); main.classList.remove('hidden'); }, 700);
-
-  // Modal
-  function openModal(mode='add'){
-    overlay.classList.remove('hidden'); modal.classList.remove('hidden');
-    requestAnimationFrame(()=>{ overlay.classList.add('show'); modal.classList.add('show'); });
-    if(mode==='add'){
-      modalTitle.textContent='Add Record'; saveBtn.textContent='Save';
-      fTitle.value=''; fType.value=''; fDesc.value=''; fStart.value=''; fRenewal.value='';
-      editingId=null;
-    }else{
-      modalTitle.textContent='Edit Record'; saveBtn.textContent='Save changes';
-    }
-    fTitle.focus();
-  }
-  function closeModal(){
-    overlay.classList.remove('show'); modal.classList.remove('show');
-    setTimeout(()=>{ overlay.classList.add('hidden'); modal.classList.add('hidden'); }, 150);
-  }
-
-  function startEdit(tabId, id){
-    const list = data[tabId]||[];
-    const rec=list.find(r=>r.id===id); if(!rec) return;
-    editingId={ tab: tabId, id };
-    openModal('edit');
-    fTitle.value=rec.title||''; fType.value=rec.type||''; fDesc.value=rec.desc||'';
-    fStart.value=rec.startDate||''; fRenewal.value=rec.renewalDate||'';
-  }
-
-  function reallyRemove(tabId, id){
-    data[tabId]=(data[tabId]||[]).filter(r=>r.id!==id);
-    save(); renderList(tabId);
-    if(viewing.tab===tabId && viewing.id===id){ showMain(); }
-    updateBanner(tabId);
-  }
-
-  // Add buttons per tab
-  Object.keys(refs).forEach(key=>{
-    const r=refs[key];
-    r.addBtn.addEventListener('click', ()=>openModal('add'));
-  });
-
-  closeBtn.addEventListener('click', closeModal);
-  overlay.addEventListener('click', closeModal);
-
-  saveBtn.addEventListener('click', ()=>{
-    const payload={
-      title: fTitle.value.trim(),
-      type: fType.value.trim(),
-      desc: fDesc.value.trim(),
-      startDate: fStart.value || '',
-      renewalDate: fRenewal.value || '',
-      createdAt: new Date().toISOString()
-    };
-    if(editingId){
-      const arr=data[editingId.tab]||[];
-      const idx=arr.findIndex(r=>r.id===editingId.id);
-      if(idx>-1){ arr[idx]={...arr[idx], ...payload}; data[editingId.tab]=arr; }
-    }else{
-      const id = Date.now().toString(36);
-      data[activeTab]=[ { id, ...payload }, ...(data[activeTab]||[]) ];
-    }
-    save(); renderList(activeTab); updateBanner(activeTab); closeModal();
-  });
-
-  // Detail view
-  function openDetail(tabId, id){
-    viewing={ tab: tabId, id };
-    const rec=(data[tabId]||[]).find(r=>r.id===id); if(!rec) return;
-    renderDetail(tabId, rec);
-    showDetail();
-  }
-  function renderDetail(tabId, rec){
-    detailWrap.innerHTML='';
-    const card=document.createElement('div'); card.className='detailCard';
-    const titleEl=document.createElement('h3'); titleEl.className='detailTitle'; titleEl.textContent=rec.title||'(Untitled)';
-    const meta=document.createElement('div'); meta.className='detailMeta';
-    meta.textContent=(rec.type||'General')+' • '+tabId[0].toUpperCase()+tabId.slice(1);
-    const desc=document.createElement('div'); desc.className='detailDesc'; desc.textContent=rec.desc||'';
-    const dates=document.createElement('div'); dates.className='detailDates';
-    if(rec.startDate){ dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start Date: '+formatDate(rec.startDate)})); }
-    if(rec.renewalDate){
-      const n = daysUntil(rec.renewalDate);
-      const ln=document.createElement('div'); ln.textContent='Renewal Date: '+formatDate(rec.renewalDate);
-      if(n>=0 && n<=7){ ln.textContent += `  (due in ${n}d)`; }
-      if(n<0){ ln.textContent += '  ❗'; ln.classList.add('expired'); }
-      dates.appendChild(ln);
-    }
-    card.appendChild(titleEl); card.appendChild(meta); if(desc.textContent) card.appendChild(desc); if(rec.startDate||rec.renewalDate) card.appendChild(dates);
-    detailWrap.appendChild(card);
-
-    calendarFromDetail.onclick=()=>openGoogleCalendar(rec);
-    editFromDetail.onclick=()=>startEdit(tabId, rec.id);
-    deleteFromDetail.onclick=()=>openConfirm(tabId, rec.id);
-  }
-
-  function showDetail(){ main.classList.add('hidden'); detail.classList.remove('hidden'); }
-  function showMain(){ detail.classList.add('hidden'); detailWrap.innerHTML=''; viewing={tab:null,id:null}; main.classList.remove('hidden'); }
-
+  function openDetail(tab,id){ viewing={tab,id}; const rec=(data[tab]||[]).find(r=>r.id===id); if(!rec) return; detailWrap.innerHTML=''; const card=document.createElement('div'); card.className='detailCard'; const t=document.createElement('h3'); t.className='detailTitle'; t.textContent=rec.title||'(Untitled)'; const meta=document.createElement('div'); meta.className='detailMeta'; meta.textContent=(rec.type||'General')+' • '+tab[0].toUpperCase()+tab.slice(1); const desc=document.createElement('div'); desc.className='detailDesc'; desc.textContent=rec.desc||''; const dates=document.createElement('div'); dates.className='detailDates'; if(rec.startDate) dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start Date: '+fmtDate(rec.startDate)})); if(rec.renewalDate){ const n=daysTo(rec.renewalDate); const ln=document.createElement('div'); ln.textContent='Renewal Date: '+fmtDate(rec.renewalDate); if(n>=0&&n<=7) ln.textContent+=`  (due in ${n}d)`; if(n<0){ ln.textContent+='  ❗'; ln.classList.add('expired'); } dates.appendChild(ln); } card.appendChild(t); card.appendChild(meta); if(desc.textContent) card.appendChild(desc); if(dates.childNodes.length) card.appendChild(dates); detailWrap.appendChild(card); detail.classList.remove('hidden'); main.classList.add('hidden'); calFromDetail.onclick=()=>openG(rec); editFromDetail.onclick=()=>startEdit(tab,id); delFromDetail.onclick=()=>openConfirm(tab,id); }
+  function showMain(){ detail.classList.add('hidden'); detailWrap.innerHTML=''; viewing=null; main.classList.remove('hidden'); }
   backBtn.addEventListener('click', showMain);
 
-  // Init
-  load();
-  // Build tabs and first render
-  switchTab('home');
+  function reallyRemove(tab,id){ data[tab]=(data[tab]||[]).filter(r=>r.id!==id); save(); renderList(tab); if(viewing && viewing.tab===tab && viewing.id===id) showMain(); }
+
+  Object.keys(refs).forEach(k=>{ refs[k].addBtn.addEventListener('click', ()=>openModal('add')); });
+  function init(){ load(); setTimeout(()=>{ splash.classList.add('hidden'); main.classList.remove('hidden'); }, 500); switchTab('home'); }
+  init();
 })();
