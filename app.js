@@ -226,12 +226,13 @@ let appCheckReady = Promise.resolve(true);
     completeEmailLinkIfPresent();
     handleRedirectResult();
 
-    auth.onAuthStateChanged((user)=>{
+    auth.onAuthStateChanged(async (user)=>{
       if(user){
         uid=user.uid;
         localStorage.setItem('lifesafe_uid',uid);
         set1((user.isAnonymous ? 'Signed in (anonymous). ' : 'Signed in. ') + 'Device/User ID: ' + uid.slice(0,8) + '…');
         setAuthUI(user);
+        try{ await appCheckReady; }catch(e){}
         startUploadsListener();
         if(active==='uploads') renderList('uploads');
       }else{
@@ -550,13 +551,14 @@ let appCheckReady = Promise.resolve(true);
   });
 
   function uploadsCol(){ return db.collection('users').doc(uid).collection('uploads'); }
-  function startUploadsListener(){
+  async function startUploadsListener(){
+    try{ await appCheckReady; }catch(e){}
     if(!db||!uid) return;
     if(uploadsUnsub){ try{uploadsUnsub();}catch(e){} uploadsUnsub=null; }
     uploadsUnsub = uploadsCol().orderBy('createdAt','desc').onSnapshot((snap)=>{
       uploads = snap.docs.map(d=>({id:d.id,...d.data()}));
       if(active==='uploads') renderList('uploads');
-    }, (err)=>{ set2('Firestore error: '+(err&&err.message?err.message:String(err))); });
+    }, (err)=>{ set2('Firestore error: '+(err&&err.message?err.message:String(err)) + ' (If App Check is enforced, this usually means the token wasn\'t ready yet — refresh and try again)'); });
   }
 
   function queueUpload(file){
