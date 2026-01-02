@@ -68,3 +68,14 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-ap
 .filename{font-weight:600}
 .smallNote{color:#667085;font-size:.85rem}
 @media (max-width:900px){.tabs{grid-template-columns:repeat(3,1fr)} .grid2{grid-template-columns:1fr;}}
+
+
+/* Auth panel (v1.17) */
+.authPanel{
+  display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.5rem;
+}
+.authPanel input{
+  flex:1 1 180px;
+  border:1px solid #d0d5dd; border-radius:.55rem; padding:.5rem .6rem;
+}
+.authPanel .btn{white-space:nowrap}

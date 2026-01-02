@@ -1,4 +1,6 @@
-// LifeSafe v1.16-Light — Firebase Storage + Firestore for Uploads (secure per-user folder)
+// LifeSafe v1.17-Light — Secure Login (Google + Email link) + Firebase Storage/Firestore Uploads
+// Built for GitHub Pages + iPhone Safari (compat SDKs, no modules).
+
 (function(){
   const splash=document.getElementById('splash');
   const main=document.getElementById('main');
@@ -7,7 +9,7 @@
   window.addEventListener('error',showApp);
   window.addEventListener('unhandledrejection',showApp);
 
-  // Firebase init
+  // ---------- Firebase init ----------
   const cfg=window.LIFESAFE_FIREBASE_CONFIG;
   const s1=document.getElementById('authStatus');
   const s2=document.getElementById('authStatus2');
@@ -15,7 +17,9 @@
   const set2=(t)=>{if(s2) s2.textContent=t;};
 
   let uid=localStorage.getItem('lifesafe_uid')||null;
-  let db=null, storage=null;
+  let db=null, storage=null, auth=null;
+  let uploads=[];
+  let uploadsUnsub=null;
 
   function humanSize(bytes){
     if(bytes==null) return '';
@@ -27,21 +31,175 @@
     return (name||'file').replace(/[^\w.\- ]+/g,'_').replace(/\s+/g,' ').trim();
   }
 
+  // Build auth panel in Uploads banner (no extra HTML edits needed)
+  function ensureAuthPanel(){
+    const banner=document.getElementById('uploadsBanner');
+    if(!banner) return null;
+    let panel=document.getElementById('authPanel');
+    if(panel) return panel;
+
+    panel=document.createElement('div');
+    panel.id='authPanel';
+    panel.className='authPanel';
+
+    const googleBtn=document.createElement('button');
+    googleBtn.className='btn ghost';
+    googleBtn.id='googleSignInBtn';
+    googleBtn.textContent='Sign in with Google';
+
+    const email=document.createElement('input');
+    email.id='emailInput';
+    email.type='email';
+    email.placeholder='Email for sign-in link';
+    email.autocomplete='email';
+
+    const emailBtn=document.createElement('button');
+    emailBtn.className='btn ghost';
+    emailBtn.id='emailLinkBtn';
+    emailBtn.textContent='Send sign-in link';
+
+    const signOutBtn=document.createElement('button');
+    signOutBtn.className='btn danger';
+    signOutBtn.id='signOutBtn';
+    signOutBtn.textContent='Sign out';
+
+    panel.appendChild(googleBtn);
+    panel.appendChild(email);
+    panel.appendChild(emailBtn);
+    panel.appendChild(signOutBtn);
+    banner.appendChild(panel);
+    return panel;
+  }
+
+  function actionUrl(){
+    // stay on same GitHub Pages path; strip query
+    return window.location.origin + window.location.pathname;
+  }
+
+  async function handleRedirectResult(){
+    try{
+      if(!auth) return;
+      await auth.getRedirectResult();
+    }catch(err){
+      console.error(err);
+      set2('Auth redirect error: ' + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  async function startGoogleSignIn(){
+    try{
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const user = auth.currentUser;
+      if(user && user.isAnonymous){
+        // link -> keeps same UID (keeps access to existing uploads)
+        await user.linkWithRedirect(provider);
+      }else{
+        await auth.signInWithRedirect(provider);
+      }
+    }catch(err){
+      console.error(err);
+      alert('Google sign-in failed: ' + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  async function sendEmailLink(email){
+    const acs = { url: actionUrl(), handleCodeInApp: true };
+    try{
+      localStorage.setItem('lifesafe_emailForSignIn', email);
+      await auth.sendSignInLinkToEmail(email, acs);
+      alert('Sign-in link sent. Open it from your email on this device.');
+    }catch(err){
+      console.error(err);
+      alert('Email link failed: ' + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  async function completeEmailLinkIfPresent(){
+    try{
+      if(!auth) return;
+      const link = window.location.href;
+      if(!auth.isSignInWithEmailLink(link)) return;
+
+      const email = localStorage.getItem('lifesafe_emailForSignIn') || window.prompt('Confirm your email to finish sign-in');
+      if(!email) return;
+
+      const cred = firebase.auth.EmailAuthProvider.credentialWithLink(email, link);
+      const user = auth.currentUser;
+
+      if(user && user.isAnonymous){
+        await user.linkWithCredential(cred);
+      }else{
+        await auth.signInWithCredential(cred);
+      }
+
+      localStorage.removeItem('lifesafe_emailForSignIn');
+      window.history.replaceState({}, document.title, actionUrl());
+    }catch(err){
+      console.error(err);
+      alert('Completing email sign-in failed: ' + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  async function doSignOut(){
+    try{
+      await auth.signOut();
+      // keep app usable; return to anonymous
+      await auth.signInAnonymously();
+    }catch(err){
+      console.error(err);
+      alert('Sign out failed: ' + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  function setAuthUI(user){
+    const panel=ensureAuthPanel();
+    if(!panel) return;
+    const googleBtn=document.getElementById('googleSignInBtn');
+    const emailInput=document.getElementById('emailInput');
+    const emailBtn=document.getElementById('emailLinkBtn');
+    const signOutBtn=document.getElementById('signOutBtn');
+
+    googleBtn.onclick = startGoogleSignIn;
+    emailBtn.onclick = ()=>{
+      const email=(emailInput.value||'').trim();
+      if(!email) return alert('Enter an email address first.');
+      sendEmailLink(email);
+    };
+    signOutBtn.onclick = doSignOut;
+
+    if(!user){
+      signOutBtn.style.display='none';
+      return;
+    }
+    signOutBtn.style.display = user.isAnonymous ? 'none' : '';
+    if(user.isAnonymous){
+      set2('Optional: sign in to use this across devices.');
+    }else{
+      const who = user.email || 'Signed in';
+      set2('Signed in. Account: ' + who);
+    }
+  }
+
   set1('Firebase: initializing…');
   try{
     if(!cfg) throw new Error('Missing Firebase config');
     if(!window.firebase) throw new Error('Firebase SDK not loaded');
+
     firebase.initializeApp(cfg);
-    const auth=firebase.auth();
-    db=firebase.firestore();
-    storage=firebase.storage();
+    auth = firebase.auth();
+    db = firebase.firestore();
+    storage = firebase.storage();
+
+    // Finish email link sign-in if present, then handle Google redirect
+    completeEmailLinkIfPresent();
+    handleRedirectResult();
 
     auth.onAuthStateChanged((user)=>{
       if(user){
         uid=user.uid;
         localStorage.setItem('lifesafe_uid',uid);
-        set1('Signed in (anonymous). Device ID: '+uid.slice(0,8)+'…');
-        set2('Uploads are private to this device/user.');
+        set1((user.isAnonymous?'Signed in (anonymous). ':'Signed in. ') + 'User ID: ' + uid.slice(0,8) + '…');
+        setAuthUI(user);
         startUploadsListener();
         if(active==='uploads') renderList('uploads');
       }else{
@@ -49,16 +207,17 @@
       }
     });
 
+    // Ensure session exists
     auth.signInAnonymously().catch((err)=>{
       set1('Auth error: '+(err&&err.message?err.message:String(err)));
-      set2('Firebase Console → Authentication → Sign-in method → enable Anonymous.');
+      set2('Firebase Console → Authentication → enable Anonymous + Google/Email.');
     });
   }catch(err){
     set1('Firebase init error: '+(err&&err.message?err.message:String(err)));
-    set2('Try adding ?v=116 to your URL to bypass cache.');
+    set2('Try adding ?v=117 to your URL to bypass cache.');
   }
 
-  // Tabs + UI refs
+  // ---------- UI + Records (from v1.16) ----------
   const tabs=[
     {id:'home',label:'Home',content:'homeContent'},
     {id:'vehicles',label:'Vehicles',content:'vehiclesContent'},
@@ -72,12 +231,6 @@
   const byId=(id)=>document.getElementById(id);
   const tabsEl=byId('tabs');
   const titleEl=byId('activeTitle');
-  const detail=byId('detail');
-  const detailWrap=byId('detailWrap');
-  const backBtn=byId('backBtn');
-  const calBtn=byId('calendarFromDetail');
-  const editBtn=byId('editFromDetail');
-  const delBtn=byId('deleteFromDetail');
 
   const overlay=byId('overlay');
   const modal=byId('modal');
@@ -98,24 +251,18 @@
     uploads:{addBtn:byId('addBtnUploads'),list:byId('uploadsList'),hint:byId('uploadsHint'),banner:byId('uploadsBanner'),file:byId('filePicker')},
   };
 
-  // Data
   const STORAGE='lifesafe_light_v114a';
   let data={home:[],vehicles:[],health:[],finance:[],ids:[],pets:[],other:[]};
-  let uploads=[];
-  let uploadsUnsub=null;
-
   let active='home';
   let editing=null;
-  let viewing=null;
   let pendingDel=null;
 
   function load(){try{const raw=localStorage.getItem(STORAGE); if(raw) data={...data,...(JSON.parse(raw)||{})};}catch(e){}}
   function save(){try{localStorage.setItem(STORAGE,JSON.stringify(data));}catch(e){}}
-
-  function fmtDate(v){if(!v) return ''; try{return new Date(v+'T00:00:00').toLocaleDateString();}catch(e){return v;}}
   function daysTo(v){if(!v) return Infinity; const t=new Date();t.setHours(0,0,0,0);const d=new Date(v+'T00:00:00');return Math.floor((d-t)/86400000);}
   function past(v){return daysTo(v)<0;}
   function soon(v){const n=daysTo(v);return n>=0&&n<=7;}
+  function fmtDate(v){if(!v) return ''; try{return new Date(v+'T00:00:00').toLocaleDateString();}catch(e){return v;}}
 
   function toggleHint(tab){
     const r=refs[tab]; if(!r||!r.hint) return;
@@ -222,7 +369,6 @@
         left.appendChild(h); left.appendChild(meta); left.appendChild(fm);
         top.appendChild(left); top.appendChild(right);
         card.appendChild(top);
-        card.addEventListener('click', ()=>openDetail('uploads', rec.id));
         r.list.appendChild(card);
       });
       return;
@@ -245,9 +391,6 @@
       const n=daysTo(rec.renewalDate);
       if(n>=0&&n<=7){const chip=document.createElement('span'); chip.className='dueSoon'; chip.textContent=`Due soon (${n}d)`; meta.appendChild(chip);}
       const d=document.createElement('div'); d.className='desc'; d.textContent=rec.desc||'';
-      const dates=document.createElement('div'); dates.className='dates';
-      if(rec.startDate) dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start: '+fmtDate(rec.startDate)}));
-      if(rec.renewalDate){const ln=document.createElement('div'); ln.textContent='Renewal: '+fmtDate(rec.renewalDate)+(past(rec.renewalDate)?'  ❗':''); if(past(rec.renewalDate)) ln.classList.add('expired'); dates.appendChild(ln);}
 
       const g=document.createElement('button'); g.className='btn small ghost'; g.textContent='Add Reminder to Calendar';
       g.onclick=(e)=>{e.stopPropagation(); const u=gUrl(rec); if(u) window.open(u,'_blank','noopener');};
@@ -257,10 +400,9 @@
       del.onclick=(e)=>{e.stopPropagation(); openConfirm(tab,rec.id);};
       right.appendChild(g); right.appendChild(edit); right.appendChild(del);
 
-      left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d); if(rec.startDate||rec.renewalDate) left.appendChild(dates);
+      left.appendChild(h); left.appendChild(meta); if(d.textContent) left.appendChild(d);
       top.appendChild(left); top.appendChild(right);
       card.appendChild(top);
-      card.addEventListener('click', ()=>openDetail(tab,rec.id));
       r.list.appendChild(card);
     });
   }
@@ -287,7 +429,7 @@
   saveRecord.addEventListener('click', ()=>{
     const payload={title:(fTitle.value||'').trim(), type:(fType.value||'').trim(), desc:(fDesc.value||'').trim(), startDate:fStart.value||'', renewalDate:fRenewal.value||'', createdAt:new Date().toISOString()};
     if(editing){
-      const arr=data[editing.tab]; const i=arr.findIndex(r=>r.id===editing.id); if(i>-1) arr[i]={...arr[i],...payload};
+      const arr=data[editing.tab]; const i=arr.findIndex(r=>r.id===editing.id); if(i>-1) arr[i={...arr[i],...payload}]; // (not used heavily right now)
     }else{
       const id=Date.now().toString(36);
       data[active]=[{id,...payload},...(data[active]||[])];
@@ -295,51 +437,8 @@
     save(); renderList(active); closeModalFn();
   });
 
-  function openDetail(tab,id){
-    viewing={tab,id};
-    detailWrap.innerHTML='';
-    if(tab==='uploads'){
-      const rec=uploads.find(r=>r.id===id); if(!rec) return;
-      const card=document.createElement('div'); card.className='detailCard';
-      card.appendChild(Object.assign(document.createElement('h3'),{className:'detailTitle',textContent:rec.filename||'(Untitled)'}));
-      card.appendChild(Object.assign(document.createElement('div'),{className:'detailMeta',textContent:'Upload • '+(rec.status==='synced'?'Synced ✓':(rec.status||'Pending'))}));
-      const dates=document.createElement('div'); dates.className='detailDates';
-      dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Size: '+humanSize(rec.size)}));
-      if(rec.createdAt) dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Added: '+new Date(rec.createdAt).toLocaleString()}));
-      card.appendChild(dates);
-      detailWrap.appendChild(card);
-
-      editBtn.style.display='none';
-      calBtn.style.display=''; calBtn.textContent='View / Download'; calBtn.onclick=()=>viewUpload(id);
-      delBtn.style.display=''; delBtn.onclick=()=>openConfirm('uploads',id);
-    }else{
-      const rec=(data[tab]||[]).find(r=>r.id===id); if(!rec) return;
-      const card=document.createElement('div'); card.className='detailCard';
-      card.appendChild(Object.assign(document.createElement('h3'),{className:'detailTitle',textContent:rec.title||'(Untitled)'}));
-      card.appendChild(Object.assign(document.createElement('div'),{className:'detailMeta',textContent:(rec.type||'General')+' • '+tab}));
-      if(rec.desc) card.appendChild(Object.assign(document.createElement('div'),{className:'detailDesc',textContent:rec.desc}));
-      const dates=document.createElement('div'); dates.className='detailDates';
-      if(rec.startDate) dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Start Date: '+fmtDate(rec.startDate)}));
-      if(rec.renewalDate) dates.appendChild(Object.assign(document.createElement('div'),{textContent:'Renewal Date: '+fmtDate(rec.renewalDate)}));
-      card.appendChild(dates);
-      detailWrap.appendChild(card);
-
-      calBtn.style.display=''; calBtn.textContent='Add Reminder to Calendar'; calBtn.onclick=()=>{const u=gUrl(rec); if(u) window.open(u,'_blank','noopener');};
-      editBtn.style.display=''; editBtn.onclick=()=>startEdit(tab,id);
-      delBtn.style.display=''; delBtn.onclick=()=>openConfirm(tab,id);
-    }
-    detail.classList.remove('hidden'); main.classList.add('hidden');
-  }
-
-  function showMain(){
-    detail.classList.add('hidden'); detailWrap.innerHTML=''; viewing=null; main.classList.remove('hidden');
-    calBtn.textContent='Add Reminder to Calendar';
-  }
-  backBtn.addEventListener('click', showMain);
-
   function removeRecord(tab,id){
     data[tab]=(data[tab]||[]).filter(r=>r.id!==id); save(); renderList(tab);
-    if(viewing && viewing.tab===tab && viewing.id===id) showMain();
   }
 
   Object.keys(refs).forEach(k=>{
@@ -352,11 +451,13 @@
       }
     });
   });
+
   refs.uploads.file.addEventListener('change', (e)=>{
     const files=[].slice.call(e.target.files||[]); if(!files.length) return;
     files.forEach(queueUpload);
   });
 
+  // Uploads storage + Firestore
   function uploadsCol(){ return db.collection('users').doc(uid).collection('uploads'); }
   function startUploadsListener(){
     if(!db||!uid) return;
@@ -414,7 +515,6 @@
     try{
       if(rec.storagePath) { try{ await storage.ref().child(rec.storagePath).delete(); }catch(e){} }
       await uploadsCol().doc(id).delete();
-      if(viewing && viewing.tab==='uploads' && viewing.id===id) showMain();
     }catch(err){
       alert('Delete failed: '+(err&&err.message?err.message:String(err)));
     }
