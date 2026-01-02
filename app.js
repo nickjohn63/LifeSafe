@@ -327,6 +327,7 @@ let appCheckReady = Promise.resolve(true);
         renderSoftGate(user);
         try{ await appCheckReady; }catch(e){}
         startUploadsListener();
+        startHomeListener();
         if(active==='uploads') renderList('uploads');
       }else{
         set1('Signing in…');
@@ -388,6 +389,10 @@ let appCheckReady = Promise.resolve(true);
   let uploads=[];
   let uploadsUnsub=null;
 
+  // Home records sync (v1.20)
+  let homeRemote=[];
+  let homeUnsub=null;
+
   let active='home';
   let editing=null;
   let viewing=null;
@@ -404,12 +409,12 @@ let appCheckReady = Promise.resolve(true);
   function toggleHint(tab){
     const r=refs[tab]; if(!r||!r.hint) return;
     if(tab==='uploads') r.hint.classList.toggle('hidden', uploads.length>0);
-    else r.hint.classList.toggle('hidden', (data[tab]||[]).length>0);
+    else r.hint.classList.toggle('hidden', ((tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[])).length>0);
   }
   function banner(tab){
     if(tab==='uploads') return;
     const r=refs[tab]; if(!r||!r.banner) return;
-    const arr=data[tab]||[];
+    const arr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
     const soonN=arr.filter(x=>soon(x.renewalDate)).length;
     const expN=arr.filter(x=>past(x.renewalDate)).length;
     if(soonN||expN){
@@ -512,7 +517,7 @@ let appCheckReady = Promise.resolve(true);
       return;
     }
 
-    const arr=data[tab]||[];
+    const arr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
     if(arr.length===0){
       const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
       r.list.appendChild(empty); return;
@@ -563,21 +568,56 @@ let appCheckReady = Promise.resolve(true);
   }
 
   function startEdit(tab,id){
-    const rec=(data[tab]||[]).find(r=>r.id===id); if(!rec) return;
+    const sourceArr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
+    const rec=(sourceArr).find(r=>r.id===id); if(!rec) return;
     editing={tab,id}; openModal('edit');
     fTitle.value=rec.title||''; fType.value=rec.type||''; fDesc.value=rec.desc||''; fStart.value=rec.startDate||''; fRenewal.value=rec.renewalDate||'';
   }
 
-  saveRecord.addEventListener('click', ()=>{
-    const payload={title:(fTitle.value||'').trim(), type:(fType.value||'').trim(), desc:(fDesc.value||'').trim(), startDate:fStart.value||'', renewalDate:fRenewal.value||'', createdAt:new Date().toISOString()};
+  saveRecord.addEventListener('click', async ()=>{
+  const payload={
+    title:(fTitle.value||'').trim(),
+    type:(fType.value||'').trim(),
+    desc:(fDesc.value||'').trim(),
+    startDate:fStart.value||'',
+    renewalDate:fRenewal.value||'',
+    updatedAt:new Date().toISOString()
+  };
+
+  const isHomeRemote = (active==='home' && db && uid);
+
+  try{
     if(editing){
-      const arr=data[editing.tab]; const i=arr.findIndex(r=>r.id===editing.id); if(i>-1) arr[i]={...arr[i],...payload};
+      // Edit existing
+      if(editing.tab==='home' && db && uid){
+        await recordsItemsCol('home').doc(editing.id).set(payload,{merge:true});
+      }else{
+        const arr=data[editing.tab]||[];
+        const i=arr.findIndex(r=>r.id===editing.id);
+        if(i>-1){
+          arr[i] = {...arr[i], ...payload};
+          save();
+        }
+      }
     }else{
+      // Add new
       const id=Date.now().toString(36);
-      data[active]=[{id,...payload},...(data[active]||[])];
+      const record={id, ...payload, createdAt:new Date().toISOString()};
+      if(isHomeRemote){
+        await recordsItemsCol('home').doc(id).set(record,{merge:true});
+      }else{
+        data[active]=[record, ...(data[active]||[])];
+        save();
+      }
     }
-    save(); renderList(active); closeModalFn();
-  });
+    renderList(active);
+    closeModalFn();
+  }catch(err){
+    const msg=(err&&err.message)?err.message:String(err);
+    try{ set2('Save failed: '+msg); }catch(e){}
+    alert('Save failed: '+msg);
+  }
+});
 
   function openDetail(tab,id){
     viewing={tab,id};
@@ -597,7 +637,8 @@ let appCheckReady = Promise.resolve(true);
       calBtn.style.display=''; calBtn.textContent='View / Download'; calBtn.onclick=()=>viewUpload(id);
       delBtn.style.display=''; delBtn.onclick=()=>openConfirm('uploads',id);
     }else{
-      const rec=(data[tab]||[]).find(r=>r.id===id); if(!rec) return;
+      const sourceArr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
+    const rec=(sourceArr).find(r=>r.id===id); if(!rec) return;
       const card=document.createElement('div'); card.className='detailCard';
       card.appendChild(Object.assign(document.createElement('h3'),{className:'detailTitle',textContent:rec.title||'(Untitled)'}));
       card.appendChild(Object.assign(document.createElement('div'),{className:'detailMeta',textContent:(rec.type||'General')+' • '+tab}));
@@ -644,6 +685,24 @@ let appCheckReady = Promise.resolve(true);
   });
 
   function uploadsCol(){ return db.collection('users').doc(uid).collection('uploads'); }
+
+function recordsItemsCol(tab){
+  // /users/<uid>/records/<tab>/items/<docId>
+  return db.collection('users').doc(uid).collection('records').doc(tab).collection('items');
+}
+
+async function startHomeListener(){
+  if(!db || !uid) return;
+  try{ await appCheckReady; }catch(e){}
+  if(homeUnsub){ try{homeUnsub();}catch(e){} homeUnsub=null; }
+  homeUnsub = recordsItemsCol('home').orderBy('createdAt','desc').onSnapshot((snap)=>{
+    homeRemote = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(active==='home') renderList('home');
+  }, (err)=>{
+    try{ set2('Home sync error: '+(err&&err.message?err.message:String(err))); }catch(e){}
+  });
+}
+
   async function startUploadsListener(){
     try{ await appCheckReady; }catch(e){}
     if(!db||!uid) return;
