@@ -1,6 +1,35 @@
 // LifeSafe v1.18-Light — Firebase Storage + Firestore for Uploads (secure per-user folder)
 (function(){
   const splash=document.getElementById('splash');
+const splashError=document.getElementById('splashError');
+const splashContinue=document.getElementById('splashContinue');
+
+function showSplashError(msg){
+  try{
+    if(splashError){
+      splashError.style.display='block';
+      splashError.textContent=msg;
+    }
+    if(splashContinue) splashContinue.style.display='inline-flex';
+  }catch(e){}
+}
+
+// Always allow manual continue (never brick the app)
+if(splashContinue){
+  splashContinue.addEventListener('click', ()=>{
+    try{ splash.classList.add('hidden'); main.classList.remove('hidden'); }catch(e){}
+  });
+}
+
+window.addEventListener('error', (e)=>{
+  showSplashError('App error: ' + (e && e.message ? e.message : 'unknown'));
+});
+window.addEventListener('unhandledrejection', (e)=>{
+  const r = e && e.reason ? e.reason : e;
+  showSplashError('App error: ' + (r && r.message ? r.message : String(r)));
+});
+
+
   const main=document.getElementById('main');
   const showApp=()=>{try{splash.classList.add('hidden');main.classList.remove('hidden');}catch(e){}};
   setTimeout(showApp,900);
