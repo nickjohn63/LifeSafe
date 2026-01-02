@@ -70,7 +70,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-ap
 @media (max-width:900px){.tabs{grid-template-columns:repeat(3,1fr)} .grid2{grid-template-columns:1fr;}}
 
 
-/* Auth panel (v1.17) */
+/* Auth panel (v1.18) */
 .authPanel{
   display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.5rem;
 }

@@ -1,17 +1,31 @@
-# LifeSafe v1.17-Light
+# LifeSafe v1.18-Light
 
-Adds secure login options **without changing** your locked light design.
+Uploads are now stored securely in Firebase Storage and indexed in Firestore.
 
-## What’s new
-- Google Sign-in
-- Email sign-in link (passwordless)
-- When you're already anonymous, signing in **links** to the same account so your UID stays the same (keeps access to existing uploads).
+## Firebase setup required
+1) Authentication → Sign-in method → Anonymous enabled
+2) Storage → rules already set to `users/<uid>/...` only
+3) Firestore Database → Create database (required)
 
-## Firebase Console setup
-Authentication → Sign-in method:
-- Enable **Anonymous**
-- Enable **Google**
-- Enable **Email/Password** (needed for email link)
+### Suggested Firestore rules (lockdown)
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/uploads/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
 
-Authentication → Settings → Authorized domains:
-- Add `nickjohn63.github.io`
+
+## v1.18 additions
+- Secure login options: Google + Email link (passwordless)
+- Firebase App Check (reCAPTCHA v3) enabled in monitor mode
+
+### Firebase Console checklist
+Authentication → Sign-in method: enable Google + Email/Password
+Authentication → Settings → Authorized domains: add nickjohn63.github.io
+App Check: keep enforcement OFF until verified requests show, then enforce Storage + Firestore.
