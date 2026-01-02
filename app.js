@@ -29,7 +29,45 @@
 
 
 // --- Secure login helpers (Google + Email link) + App Check (v1.18) ---
-function ensureAuthPanel(){ /* removed in v1.19b */ }
+function ensureAuthPanel(){
+  const banner=document.getElementById('uploadsBanner');
+  if(!banner) return null;
+  let panel=document.getElementById('authPanel');
+  if(panel) return panel;
+
+  panel=document.createElement('div');
+  panel.id='authPanel';
+  panel.className='authPanel';
+
+  const googleBtn=document.createElement('button');
+  googleBtn.className='btn ghost';
+  googleBtn.id='googleSignInBtn';
+  googleBtn.textContent='Sign in with Google';
+
+  const email=document.createElement('input');
+  email.id='emailInput';
+  email.type='email';
+  email.placeholder='Email for sign-in link';
+  email.autocomplete='email';
+
+  const emailBtn=document.createElement('button');
+  emailBtn.className='btn ghost';
+  emailBtn.id='emailLinkBtn';
+  emailBtn.textContent='Send sign-in link';
+
+  const signOutBtn=document.createElement('button');
+  signOutBtn.className='btn danger';
+  signOutBtn.id='signOutBtn';
+  signOutBtn.textContent='Sign out';
+
+  panel.appendChild(googleBtn);
+  panel.appendChild(email);
+  panel.appendChild(emailBtn);
+  panel.appendChild(signOutBtn);
+
+  banner.appendChild(panel);
+  return panel;
+}
 
 function actionUrl(){
   // keep same path, strip query params
@@ -62,7 +100,16 @@ async function startGoogleSignIn(){
   }
 }
 
-async function sendEmailLink(email){ alert('Email link sign-in is disabled. Use Google sign-in.'); }
+async function sendEmailLink(email){
+  try{
+    const acs={ url: actionUrl(), handleCodeInApp:true };
+    localStorage.setItem('lifesafe_emailForSignIn', email);
+    await auth.sendSignInLinkToEmail(email, acs);
+    alert('Sign-in link sent. Open it from your email on this device.');
+  }catch(err){
+    console.error(err);
+    alert('Email link failed: ' + (err && err.message ? err.message : String(err)));
+  }
 }
 
 async function completeEmailLinkIfPresent(){
@@ -100,7 +147,7 @@ async function doSignOut(){
 }
 
 function setAuthUI(user){
-  const panel=
+  const panel=ensureAuthPanel();
   if(!panel) return;
   const googleBtn=document.getElementById('googleSignInBtn');
   const emailInput=document.getElementById('emailInput');
