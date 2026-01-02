@@ -95,3 +95,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-ap
 .softGate .row input{flex:1 1 210px;}
 .softGate .tinyNote{margin-top:.5rem; font-size:.85rem; color:#667085;}
 .softGate .btn.secondary{opacity:.85}
+
+
+/* Splash gate spacing */
+#splashGate{max-width:520px; margin-left:auto; margin-right:auto;}

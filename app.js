@@ -3,7 +3,9 @@
   const splash=document.getElementById('splash');
   const main=document.getElementById('main');
   const showApp=()=>{try{splash.classList.add('hidden');main.classList.remove('hidden');}catch(e){}};
-  setTimeout(showApp,900);
+  const proceedToApp=()=>{ showApp(); };
+
+  // v1.21: don't auto-enter; show sign-in choice on splash
   window.addEventListener('error',showApp);
   window.addEventListener('unhandledrejection',showApp);
 
@@ -175,16 +177,86 @@ function setAuthUI(user){
     set2('Signed in. Account: ' + who);
   }
 }
-// Soft gate: encourage sign-in first (v1.19)
-function renderSoftGate(user){
-  // Show only when user is anonymous (guest mode)
-  const banner = document.getElementById('uploadsBanner');
-  if(!banner) return;
+  // Soft gate on Splash: choose sign-in before entering (v1.21)
+  function renderSplashGate(user){
+    const gate = document.getElementById('splashGate');
+    if(!gate) return;
 
-  let gate = document.getElementById('softGate');
-  if(user && !user.isAnonymous){
-    if(gate) gate.remove();
-    return;
+    // If already confirmed guest or signed in non-anon -> enter app
+    const guestOK = (localStorage.getItem('lifesafe_guest_confirmed')==='1');
+    if(user && !user.isAnonymous){
+      gate.style.display='none';
+      proceedToApp();
+      return;
+    }
+    if(guestOK){
+      gate.style.display='none';
+      proceedToApp();
+      return;
+    }
+
+    // Anonymous (default) and not confirmed: show choices
+    gate.style.display='block';
+    gate.innerHTML='';
+
+    const h=document.createElement('h4');
+    h.textContent='Sign in to store safely (recommended)';
+
+    const p=document.createElement('p');
+    p.textContent='Sign in before you start so your records and uploads can be accessed across devices. You can continue as Guest, but data stays on this device until you sign in.';
+
+    const row=document.createElement('div');
+    row.className='row';
+
+    const email=document.createElement('input');
+    email.id='splashEmail';
+    email.type='email';
+    email.placeholder='Email for sign-in link';
+    email.autocomplete='email';
+
+    const emailBtn=document.createElement('button');
+    emailBtn.className='btn ghost';
+    emailBtn.textContent='Send sign-in link';
+
+    const googleBtn=document.createElement('button');
+    googleBtn.className='btn ghost';
+    googleBtn.textContent='Sign in with Google';
+
+    const guestBtn=document.createElement('button');
+    guestBtn.className='btn secondary';
+    guestBtn.textContent='Continue as Guest';
+
+    row.appendChild(email);
+    row.appendChild(emailBtn);
+    row.appendChild(googleBtn);
+    row.appendChild(guestBtn);
+
+    const note=document.createElement('div');
+    note.className='tinyNote';
+    note.textContent='Tip: If you start as Guest, signing in later will keep your data (it links your account).';
+
+    gate.appendChild(h);
+    gate.appendChild(p);
+    gate.appendChild(row);
+    gate.appendChild(note);
+
+    emailBtn.onclick=()=>{
+      const v=(email.value||'').trim();
+      if(!v) return alert('Enter an email address first.');
+      sendEmailLink(v);
+    };
+    googleBtn.onclick=startGoogleSignIn;
+    guestBtn.onclick=()=>{
+      const ok = window.confirm('Continue as Guest?
+
+Data will be private to this device until you sign in. If you switch device or clear browser data you may lose access.
+
+You can sign in later to link and keep your data.');
+      if(ok){
+        localStorage.setItem('lifesafe_guest_confirmed','1');
+        proceedToApp();
+      }
+    };
   }
 
   if(!gate){
@@ -324,7 +396,7 @@ let appCheckReady = Promise.resolve(true);
         localStorage.setItem('lifesafe_uid',uid);
         set1((user.isAnonymous ? 'Signed in (anonymous). ' : 'Signed in. ') + 'Device/User ID: ' + uid.slice(0,8) + '…');
         setAuthUI(user);
-        renderSoftGate(user);
+        renderSplashGate(user);
         try{ await appCheckReady; }catch(e){}
         startUploadsListener();
         startHomeListener();
@@ -769,6 +841,5 @@ async function startHomeListener(){
 
   // init
   load();
-  setTimeout(showApp,500);
   switchTab('home');
 })();
