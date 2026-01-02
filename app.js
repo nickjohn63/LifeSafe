@@ -182,12 +182,24 @@ function setAuthUI(user){
     if(!window.firebase) throw new Error('Firebase SDK not loaded');
     firebase.initializeApp(cfg);
 
-    // Firebase App Check (reCAPTCHA v3)
+    // Firebase App Check (reCAPTCHA v3) — deferred for iPhone Safari stability
+// Add ?nocaptcha=1 to URL to bypass App Check during troubleshooting.
+(function(){
+  try{
+    const qp = new URLSearchParams(window.location.search || '');
+    if(qp.get('nocaptcha') === '1') return;
+  }catch(e){}
+  // Defer activation until after first render and auth init
+  setTimeout(()=>{
     try{
-      firebase.appCheck().activate('6LeIFj4sAAAAAOzs2S8Cd3UA9BNkkeig8m4QZQcy', true);
+      if(firebase && firebase.appCheck){
+        firebase.appCheck().activate('6LeIFj4sAAAAAOzs2S8Cd3UA9BNkkeig8m4QZQcy', true);
+      }
     }catch(e){
       console.warn('App Check not active', e);
     }
+  }, 1200);
+})();
     auth=firebase.auth();
     db=firebase.firestore();
     storage=firebase.storage();
