@@ -180,7 +180,7 @@ function setAuthUI(user){
   // Soft gate on Splash: choose sign-in before entering (v1.21)
   function renderSplashGate(user){
     const gate = document.getElementById('splashGate');
-    if(!gate) return;
+    if(!gate){ proceedToApp(); return; }
 
     // If already confirmed guest or signed in non-anon -> enter app
     const guestOK = (localStorage.getItem('lifesafe_guest_confirmed')==='1');
