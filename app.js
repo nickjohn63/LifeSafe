@@ -4,6 +4,37 @@
   const main=document.getElementById('main');
   const showApp=()=>{try{splash.classList.add('hidden');main.classList.remove('hidden');}catch(e){}};
   const proceedToApp=()=>{ showApp(); };
+// v1.21g: Splash sign-in queue (works even if Auth is still loading)
+window.lifesafeQueue = window.lifesafeQueue || [];
+window.lifesafeAuthReady = false;
+
+function splashStatus(msg){
+  try{
+    const n=document.getElementById('splashNote');
+    if(n) n.textContent = msg;
+  }catch(e){}
+}
+
+// Default handlers: queue the action until Firebase/Auth is ready
+window.lifesafeSendEmailLink = (email)=>{
+  splashStatus('Sign-in still loading… queued email link. Please wait.');
+  window.lifesafeQueue.push({t:'email', email});
+};
+window.lifesafeGoogleSignIn = ()=>{
+  splashStatus('Sign-in still loading… queued Google sign-in. Please wait.');
+  window.lifesafeQueue.push({t:'google'});
+};
+
+// Surface JS errors on splash (iPhone Safari often hides them)
+window.addEventListener('error', (e)=>{
+  splashStatus('App error: ' + (e && e.message ? e.message : 'unknown') + ' (try refresh)');
+});
+window.addEventListener('unhandledrejection', (e)=>{
+  const r = e && e.reason ? e.reason : e;
+  splashStatus('App error: ' + (r && r.message ? r.message : String(r)) + ' (try refresh)');
+});
+
+
 
   // v1.21: don't auto-enter; show sign-in choice on splash
   window.addEventListener('error',showApp);
@@ -489,12 +520,22 @@ let appCheckReady = Promise.resolve(true);
 })();
     auth=firebase.auth();
 
-    // Expose minimal handlers for the splash screen fallback
+    // Wire splash handlers now that Auth is ready (v1.21g)
+try{
+  window.lifesafeSendEmailLink = (email)=>sendEmailLink(email);
+  window.lifesafeGoogleSignIn = ()=>startGoogleSignIn();
+  window.lifesafeAuthReady = true;
+  splashStatus('Sign-in ready. Choose Email or Google, or continue as Guest.');
+  // Flush any queued actions
+  const q = (window.lifesafeQueue||[]).splice(0);
+  q.forEach((a)=>{
     try{
-      window.lifesafeSendEmailLink = (email)=>sendEmailLink(email);
-      window.lifesafeGoogleSignIn = ()=>startGoogleSignIn();
-      window.lifesafeAuthReady = true;
-    }catch(e){}
+      if(a.t==='email') sendEmailLink(a.email);
+      if(a.t==='google') startGoogleSignIn();
+    }catch(err){}
+  });
+}catch(e){}
+
     db=firebase.firestore();
     storage=firebase.storage();
 
