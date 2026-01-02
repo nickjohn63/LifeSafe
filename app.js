@@ -179,16 +179,96 @@ function setAuthUI(user){
 }
   // Soft gate on Splash: choose sign-in before entering (v1.21)
   function renderSplashGate(user){
-    const gate = document.getElementById('splashGate');
-    if(!gate){ proceedToApp(); return; }
+  const gate = document.getElementById('splashGate');
+  if(!gate){ proceedToApp(); return; }
 
-    // If already confirmed guest or signed in non-anon -> enter app
-    const guestOK = (localStorage.getItem('lifesafe_guest_confirmed')==='1');
-    if(user && !user.isAnonymous){
-      gate.style.display='none';
+  const guestOK = (localStorage.getItem('lifesafe_guest_confirmed')==='1');
+  if(user && !user.isAnonymous){
+    gate.style.display='none';
+    proceedToApp();
+    return;
+  }
+  if(guestOK){
+    gate.style.display='none';
+    proceedToApp();
+    return;
+  }
+
+  gate.style.display='block';
+  gate.innerHTML='';
+
+  const h=document.createElement('h4');
+  h.textContent='Sign in to store safely (recommended)';
+
+  const p=document.createElement('p');
+  p.textContent='Sign in before you start so your records and uploads can be accessed across devices. You can continue as Guest, but data stays on this device until you sign in.';
+
+  const row=document.createElement('div');
+  row.className='row';
+
+  const email=document.createElement('input');
+  email.id='splashEmail';
+  email.type='email';
+  email.placeholder='Email for sign-in link';
+  email.autocomplete='email';
+
+  const emailBtn=document.createElement('button');
+  emailBtn.className='btn ghost';
+  emailBtn.textContent='Send sign-in link';
+
+  const googleBtn=document.createElement('button');
+  googleBtn.className='btn ghost';
+  googleBtn.textContent='Sign in with Google';
+
+  const guestBtn=document.createElement('button');
+  guestBtn.className='btn secondary';
+  guestBtn.textContent='Continue as Guest';
+
+  row.appendChild(email);
+  row.appendChild(emailBtn);
+  row.appendChild(googleBtn);
+  row.appendChild(guestBtn);
+
+  const note=document.createElement('div');
+  note.className='tinyNote';
+  note.textContent='Tip: If you start as Guest, signing in later will keep your data (it links your account).';
+
+  gate.appendChild(h);
+  gate.appendChild(p);
+  gate.appendChild(row);
+  gate.appendChild(note);
+
+  // Guest path always available (even if Firebase hasn't finished initialising yet)
+  guestBtn.onclick=()=>{
+    const ok = window.confirm('Continue as Guest?
+
+Data will be private to this device until you sign in. If you switch device or clear browser data you may lose access.
+
+You can sign in later to link and keep your data.');
+    if(ok){
+      localStorage.setItem('lifesafe_guest_confirmed','1');
       proceedToApp();
-      return;
     }
+  };
+
+  // If Firebase/Auth isn't ready yet, show disabled sign-in buttons
+  const canAuth = (typeof sendEmailLink === 'function') && (typeof startGoogleSignIn === 'function') && (typeof auth !== 'undefined') && auth;
+  if(!canAuth){
+    emailBtn.disabled=true;
+    googleBtn.disabled=true;
+    emailBtn.style.opacity='0.6';
+    googleBtn.style.opacity='0.6';
+    note.textContent='Loading sign-in… If it does not appear, choose Continue as Guest and try signing in from Uploads later.';
+    return;
+  }
+
+  emailBtn.onclick=()=>{
+    const v=(email.value||'').trim();
+    if(!v) return alert('Enter an email address first.');
+    sendEmailLink(v);
+  };
+  googleBtn.onclick=startGoogleSignIn;
+}
     if(guestOK){
       gate.style.display='none';
       proceedToApp();
@@ -339,6 +419,8 @@ You can sign in later to link and keep your data.');
 }
 
 
+
+  renderSplashGate(null);
 
   set1('Firebase: initializing…');
   try{
