@@ -29,8 +29,3 @@ service cloud.firestore {
 Authentication → Sign-in method: enable Google + Email/Password
 Authentication → Settings → Authorized domains: add nickjohn63.github.io
 App Check: keep enforcement OFF until verified requests show, then enforce Storage + Firestore.
-
-
-## v1.20
-Home tab records sync to Firestore at /users/<uid>/records/home/items.
-Update Firestore rules accordingly.

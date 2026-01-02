@@ -1,35 +1,6 @@
 // LifeSafe v1.18-Light — Firebase Storage + Firestore for Uploads (secure per-user folder)
 (function(){
   const splash=document.getElementById('splash');
-const splashError=document.getElementById('splashError');
-const splashContinue=document.getElementById('splashContinue');
-
-function showSplashError(msg){
-  try{
-    if(splashError){
-      splashError.style.display='block';
-      splashError.textContent=msg;
-    }
-    if(splashContinue) splashContinue.style.display='inline-flex';
-  }catch(e){}
-}
-
-// Always allow manual continue (never brick the app)
-if(splashContinue){
-  splashContinue.addEventListener('click', ()=>{
-    try{ splash.classList.add('hidden'); main.classList.remove('hidden'); }catch(e){}
-  });
-}
-
-window.addEventListener('error', (e)=>{
-  showSplashError('App error: ' + (e && e.message ? e.message : 'unknown'));
-});
-window.addEventListener('unhandledrejection', (e)=>{
-  const r = e && e.reason ? e.reason : e;
-  showSplashError('App error: ' + (r && r.message ? r.message : String(r)));
-});
-
-
   const main=document.getElementById('main');
   const showApp=()=>{try{splash.classList.add('hidden');main.classList.remove('hidden');}catch(e){}};
   setTimeout(showApp,900);
@@ -71,9 +42,28 @@ function ensureAuthPanel(){
   const googleBtn=document.createElement('button');
   googleBtn.className='btn ghost';
   googleBtn.id='googleSignInBtn';
-  googleBtn.textContent='Sign in with Google (sync)';
+  googleBtn.textContent='Sign in with Google';
 
-    panel.appendChild(signOutBtn);
+  const email=document.createElement('input');
+  email.id='emailInput';
+  email.type='email';
+  email.placeholder='Email for sign-in link';
+  email.autocomplete='email';
+
+  const emailBtn=document.createElement('button');
+  emailBtn.className='btn ghost';
+  emailBtn.id='emailLinkBtn';
+  emailBtn.textContent='Send sign-in link';
+
+  const signOutBtn=document.createElement('button');
+  signOutBtn.className='btn danger';
+  signOutBtn.id='signOutBtn';
+  signOutBtn.textContent='Sign out';
+
+  panel.appendChild(googleBtn);
+  panel.appendChild(email);
+  panel.appendChild(emailBtn);
+  panel.appendChild(signOutBtn);
 
   banner.appendChild(panel);
   return panel;
@@ -111,12 +101,33 @@ async function startGoogleSignIn(){
 }
 
 async function sendEmailLink(email){
-  // v1.22: Email-link sign-in disabled (Google-only for simplest cross-device sync)
-  alert('Email link sign-in is disabled in this build. Please use “Sign in with Google” to sync across devices.');
-}
+  try{
+    const acs={ url: actionUrl(), handleCodeInApp:true };
+    localStorage.setItem('lifesafe_emailForSignIn', email);
+    await auth.sendSignInLinkToEmail(email, acs);
+    alert('Sign-in link sent. Open it from your email on this device.');
+  }catch(err){
+    console.error(err);
+    alert('Email link failed: ' + (err && err.message ? err.message : String(err)));
+  }
 }
 
-async function completeEmailLinkIfPresent(){ /* email-link disabled */ }
+async function completeEmailLinkIfPresent(){
+  try{
+    if(!auth) return;
+    const link=window.location.href;
+    if(!auth.isSignInWithEmailLink(link)) return;
+
+    const email = localStorage.getItem('lifesafe_emailForSignIn') || window.prompt('Confirm your email to finish sign-in');
+    if(!email) return;
+
+    const cred = firebase.auth.EmailAuthProvider.credentialWithLink(email, link);
+    const user = auth.currentUser;
+    if(user && user.isAnonymous){
+      await user.linkWithCredential(cred);
+    }else{
+      await auth.signInWithCredential(cred);
+    }
     localStorage.removeItem('lifesafe_emailForSignIn');
     window.history.replaceState({}, document.title, actionUrl());
   }catch(err){
@@ -138,7 +149,10 @@ async function doSignOut(){
 function setAuthUI(user){
   const panel=ensureAuthPanel();
   if(!panel) return;
-  const googleBtn=document.getElementById('googleSignInBtn');  const signOutBtn=document.getElementById('signOutBtn');
+  const googleBtn=document.getElementById('googleSignInBtn');
+  const emailInput=document.getElementById('emailInput');
+  const emailBtn=document.getElementById('emailLinkBtn');
+  const signOutBtn=document.getElementById('signOutBtn');
 
   if(googleBtn) googleBtn.onclick=startGoogleSignIn;
   if(emailBtn) emailBtn.onclick=()=>{
@@ -155,15 +169,15 @@ function setAuthUI(user){
 
   if(signOutBtn) signOutBtn.style.display = user.isAnonymous ? 'none' : '';
   if(user.isAnonymous){
-    set2('Guest mode: data is device-only. Sign in with Google to sync across devices.');
+    set2('Uploads are private to this device/user. (Sign in to use across devices.)');
   }else{
-    const who = user.email || 'Signed in (Google)';
+    const who = user.email || 'Signed in';
     set2('Signed in. Account: ' + who);
   }
 }
 // Soft gate: encourage sign-in first (v1.19)
 function renderSoftGate(user){
-  // v1.22: Google-only soft gate (simplest 2-device sync)
+  // Show only when user is anonymous (guest mode)
   const banner = document.getElementById('uploadsBanner');
   if(!banner) return;
 
@@ -172,67 +186,6 @@ function renderSoftGate(user){
     if(gate) gate.remove();
     return;
   }
-
-  if(!gate){
-    gate = document.createElement('div');
-    gate.id = 'softGate';
-    gate.className = 'softGate';
-
-    const h = document.createElement('h4');
-    h.textContent = 'Sync across devices';
-    const p = document.createElement('p');
-    p.textContent = 'Sign in with Google so both devices can see the same uploads and records. Guest mode keeps data on this device only.';
-
-    const row = document.createElement('div');
-    row.className = 'row';
-
-    const googleBtn=document.createElement('button');
-    googleBtn.className='btn ghost';
-    googleBtn.id='softGateGoogleBtn';
-    googleBtn.textContent='Sign in with Google (recommended)';
-
-    const guestBtn=document.createElement('button');
-    guestBtn.className='btn secondary';
-    guestBtn.id='softGateGuestBtn';
-    guestBtn.textContent='Continue as Guest';
-
-    row.appendChild(googleBtn);
-    row.appendChild(guestBtn);
-
-    const note = document.createElement('div');
-    note.className = 'tinyNote';
-    note.textContent = 'Tip: If you already added data in Guest mode, signing in later will keep your data (it links your account).';
-
-    gate.appendChild(h);
-    gate.appendChild(p);
-    gate.appendChild(row);
-    gate.appendChild(note);
-
-    banner.insertBefore(gate, banner.firstChild);
-  }
-
-  const googleBtn=document.getElementById('softGateGoogleBtn');
-  const guestBtn=document.getElementById('softGateGuestBtn');
-
-  if(googleBtn) googleBtn.onclick=startGoogleSignIn;
-
-  if(guestBtn) guestBtn.onclick = ()=>{
-    const key='lifesafe_guest_confirmed';
-    if(localStorage.getItem(key)==='1'){
-      set2('Guest mode active. You can sign in anytime.');
-      return;
-    }
-    const ok = window.confirm('Continue as Guest?
-
-Data will be device-only until you sign in with Google. If you clear browser data you may lose access.
-
-You can sign in later to link and keep your data.');
-    if(ok){
-      localStorage.setItem(key,'1');
-      set2('Guest mode active. You can sign in anytime.');
-    }
-  };
-}
 
   if(!gate){
     gate = document.createElement('div');
@@ -361,7 +314,9 @@ let appCheckReady = Promise.resolve(true);
     db=firebase.firestore();
     storage=firebase.storage();
 
-    // Finish email-link sign-in if present, then handle Google redirect    handleRedirectResult();
+    // Finish email-link sign-in if present, then handle Google redirect
+    completeEmailLinkIfPresent();
+    handleRedirectResult();
 
     auth.onAuthStateChanged(async (user)=>{
       if(user){
@@ -372,7 +327,6 @@ let appCheckReady = Promise.resolve(true);
         renderSoftGate(user);
         try{ await appCheckReady; }catch(e){}
         startUploadsListener();
-        startHomeListener();
         if(active==='uploads') renderList('uploads');
       }else{
         set1('Signing in…');
@@ -434,10 +388,6 @@ let appCheckReady = Promise.resolve(true);
   let uploads=[];
   let uploadsUnsub=null;
 
-  // Home records sync (v1.20)
-  let homeRemote=[];
-  let homeUnsub=null;
-
   let active='home';
   let editing=null;
   let viewing=null;
@@ -454,12 +404,12 @@ let appCheckReady = Promise.resolve(true);
   function toggleHint(tab){
     const r=refs[tab]; if(!r||!r.hint) return;
     if(tab==='uploads') r.hint.classList.toggle('hidden', uploads.length>0);
-    else r.hint.classList.toggle('hidden', ((tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[])).length>0);
+    else r.hint.classList.toggle('hidden', (data[tab]||[]).length>0);
   }
   function banner(tab){
     if(tab==='uploads') return;
     const r=refs[tab]; if(!r||!r.banner) return;
-    const arr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
+    const arr=data[tab]||[];
     const soonN=arr.filter(x=>soon(x.renewalDate)).length;
     const expN=arr.filter(x=>past(x.renewalDate)).length;
     if(soonN||expN){
@@ -562,7 +512,7 @@ let appCheckReady = Promise.resolve(true);
       return;
     }
 
-    const arr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
+    const arr=data[tab]||[];
     if(arr.length===0){
       const empty=document.createElement('div'); empty.className='centerText'; empty.textContent='No records yet';
       r.list.appendChild(empty); return;
@@ -613,56 +563,21 @@ let appCheckReady = Promise.resolve(true);
   }
 
   function startEdit(tab,id){
-    const sourceArr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
-    const rec=(sourceArr).find(r=>r.id===id); if(!rec) return;
+    const rec=(data[tab]||[]).find(r=>r.id===id); if(!rec) return;
     editing={tab,id}; openModal('edit');
     fTitle.value=rec.title||''; fType.value=rec.type||''; fDesc.value=rec.desc||''; fStart.value=rec.startDate||''; fRenewal.value=rec.renewalDate||'';
   }
 
-  saveRecord.addEventListener('click', async ()=>{
-  const payload={
-    title:(fTitle.value||'').trim(),
-    type:(fType.value||'').trim(),
-    desc:(fDesc.value||'').trim(),
-    startDate:fStart.value||'',
-    renewalDate:fRenewal.value||'',
-    updatedAt:new Date().toISOString()
-  };
-
-  const isHomeRemote = (active==='home' && db && uid);
-
-  try{
+  saveRecord.addEventListener('click', ()=>{
+    const payload={title:(fTitle.value||'').trim(), type:(fType.value||'').trim(), desc:(fDesc.value||'').trim(), startDate:fStart.value||'', renewalDate:fRenewal.value||'', createdAt:new Date().toISOString()};
     if(editing){
-      // Edit existing
-      if(editing.tab==='home' && db && uid){
-        await recordsItemsCol('home').doc(editing.id).set(payload,{merge:true});
-      }else{
-        const arr=data[editing.tab]||[];
-        const i=arr.findIndex(r=>r.id===editing.id);
-        if(i>-1){
-          arr[i] = {...arr[i], ...payload};
-          save();
-        }
-      }
+      const arr=data[editing.tab]; const i=arr.findIndex(r=>r.id===editing.id); if(i>-1) arr[i]={...arr[i],...payload};
     }else{
-      // Add new
       const id=Date.now().toString(36);
-      const record={id, ...payload, createdAt:new Date().toISOString()};
-      if(isHomeRemote){
-        await recordsItemsCol('home').doc(id).set(record,{merge:true});
-      }else{
-        data[active]=[record, ...(data[active]||[])];
-        save();
-      }
+      data[active]=[{id,...payload},...(data[active]||[])];
     }
-    renderList(active);
-    closeModalFn();
-  }catch(err){
-    const msg=(err&&err.message)?err.message:String(err);
-    try{ set2('Save failed: '+msg); }catch(e){}
-    alert('Save failed: '+msg);
-  }
-});
+    save(); renderList(active); closeModalFn();
+  });
 
   function openDetail(tab,id){
     viewing={tab,id};
@@ -682,8 +597,7 @@ let appCheckReady = Promise.resolve(true);
       calBtn.style.display=''; calBtn.textContent='View / Download'; calBtn.onclick=()=>viewUpload(id);
       delBtn.style.display=''; delBtn.onclick=()=>openConfirm('uploads',id);
     }else{
-      const sourceArr = (tab==='home' && db && uid) ? (homeRemote||[]) : (data[tab]||[]);
-    const rec=(sourceArr).find(r=>r.id===id); if(!rec) return;
+      const rec=(data[tab]||[]).find(r=>r.id===id); if(!rec) return;
       const card=document.createElement('div'); card.className='detailCard';
       card.appendChild(Object.assign(document.createElement('h3'),{className:'detailTitle',textContent:rec.title||'(Untitled)'}));
       card.appendChild(Object.assign(document.createElement('div'),{className:'detailMeta',textContent:(rec.type||'General')+' • '+tab}));
@@ -730,24 +644,6 @@ let appCheckReady = Promise.resolve(true);
   });
 
   function uploadsCol(){ return db.collection('users').doc(uid).collection('uploads'); }
-
-function recordsItemsCol(tab){
-  // /users/<uid>/records/<tab>/items/<docId>
-  return db.collection('users').doc(uid).collection('records').doc(tab).collection('items');
-}
-
-async function startHomeListener(){
-  if(!db || !uid) return;
-  try{ await appCheckReady; }catch(e){}
-  if(homeUnsub){ try{homeUnsub();}catch(e){} homeUnsub=null; }
-  homeUnsub = recordsItemsCol('home').orderBy('createdAt','desc').onSnapshot((snap)=>{
-    homeRemote = snap.docs.map(d=>({id:d.id, ...d.data()}));
-    if(active==='home') renderList('home');
-  }, (err)=>{
-    try{ set2('Home sync error: '+(err&&err.message?err.message:String(err))); }catch(e){}
-  });
-}
-
   async function startUploadsListener(){
     try{ await appCheckReady; }catch(e){}
     if(!db||!uid) return;
