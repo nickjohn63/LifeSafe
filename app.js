@@ -42,28 +42,9 @@ function ensureAuthPanel(){
   const googleBtn=document.createElement('button');
   googleBtn.className='btn ghost';
   googleBtn.id='googleSignInBtn';
-  googleBtn.textContent='Sign in with Google';
+  googleBtn.textContent='Sign in with Google (sync)';
 
-  const email=document.createElement('input');
-  email.id='emailInput';
-  email.type='email';
-  email.placeholder='Email for sign-in link';
-  email.autocomplete='email';
-
-  const emailBtn=document.createElement('button');
-  emailBtn.className='btn ghost';
-  emailBtn.id='emailLinkBtn';
-  emailBtn.textContent='Send sign-in link';
-
-  const signOutBtn=document.createElement('button');
-  signOutBtn.className='btn danger';
-  signOutBtn.id='signOutBtn';
-  signOutBtn.textContent='Sign out';
-
-  panel.appendChild(googleBtn);
-  panel.appendChild(email);
-  panel.appendChild(emailBtn);
-  panel.appendChild(signOutBtn);
+    panel.appendChild(signOutBtn);
 
   banner.appendChild(panel);
   return panel;
@@ -101,33 +82,12 @@ async function startGoogleSignIn(){
 }
 
 async function sendEmailLink(email){
-  try{
-    const acs={ url: actionUrl(), handleCodeInApp:true };
-    localStorage.setItem('lifesafe_emailForSignIn', email);
-    await auth.sendSignInLinkToEmail(email, acs);
-    alert('Sign-in link sent. Open it from your email on this device.');
-  }catch(err){
-    console.error(err);
-    alert('Email link failed: ' + (err && err.message ? err.message : String(err)));
-  }
+  // v1.22: Email-link sign-in disabled (Google-only for simplest cross-device sync)
+  alert('Email link sign-in is disabled in this build. Please use “Sign in with Google” to sync across devices.');
+}
 }
 
-async function completeEmailLinkIfPresent(){
-  try{
-    if(!auth) return;
-    const link=window.location.href;
-    if(!auth.isSignInWithEmailLink(link)) return;
-
-    const email = localStorage.getItem('lifesafe_emailForSignIn') || window.prompt('Confirm your email to finish sign-in');
-    if(!email) return;
-
-    const cred = firebase.auth.EmailAuthProvider.credentialWithLink(email, link);
-    const user = auth.currentUser;
-    if(user && user.isAnonymous){
-      await user.linkWithCredential(cred);
-    }else{
-      await auth.signInWithCredential(cred);
-    }
+async function completeEmailLinkIfPresent(){ /* email-link disabled */ }
     localStorage.removeItem('lifesafe_emailForSignIn');
     window.history.replaceState({}, document.title, actionUrl());
   }catch(err){
@@ -149,10 +109,7 @@ async function doSignOut(){
 function setAuthUI(user){
   const panel=ensureAuthPanel();
   if(!panel) return;
-  const googleBtn=document.getElementById('googleSignInBtn');
-  const emailInput=document.getElementById('emailInput');
-  const emailBtn=document.getElementById('emailLinkBtn');
-  const signOutBtn=document.getElementById('signOutBtn');
+  const googleBtn=document.getElementById('googleSignInBtn');  const signOutBtn=document.getElementById('signOutBtn');
 
   if(googleBtn) googleBtn.onclick=startGoogleSignIn;
   if(emailBtn) emailBtn.onclick=()=>{
@@ -169,15 +126,15 @@ function setAuthUI(user){
 
   if(signOutBtn) signOutBtn.style.display = user.isAnonymous ? 'none' : '';
   if(user.isAnonymous){
-    set2('Uploads are private to this device/user. (Sign in to use across devices.)');
+    set2('Guest mode: data is device-only. Sign in with Google to sync across devices.');
   }else{
-    const who = user.email || 'Signed in';
+    const who = user.email || 'Signed in (Google)';
     set2('Signed in. Account: ' + who);
   }
 }
 // Soft gate: encourage sign-in first (v1.19)
 function renderSoftGate(user){
-  // Show only when user is anonymous (guest mode)
+  // v1.22: Google-only soft gate (simplest 2-device sync)
   const banner = document.getElementById('uploadsBanner');
   if(!banner) return;
 
@@ -186,6 +143,67 @@ function renderSoftGate(user){
     if(gate) gate.remove();
     return;
   }
+
+  if(!gate){
+    gate = document.createElement('div');
+    gate.id = 'softGate';
+    gate.className = 'softGate';
+
+    const h = document.createElement('h4');
+    h.textContent = 'Sync across devices';
+    const p = document.createElement('p');
+    p.textContent = 'Sign in with Google so both devices can see the same uploads and records. Guest mode keeps data on this device only.';
+
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const googleBtn=document.createElement('button');
+    googleBtn.className='btn ghost';
+    googleBtn.id='softGateGoogleBtn';
+    googleBtn.textContent='Sign in with Google (recommended)';
+
+    const guestBtn=document.createElement('button');
+    guestBtn.className='btn secondary';
+    guestBtn.id='softGateGuestBtn';
+    guestBtn.textContent='Continue as Guest';
+
+    row.appendChild(googleBtn);
+    row.appendChild(guestBtn);
+
+    const note = document.createElement('div');
+    note.className = 'tinyNote';
+    note.textContent = 'Tip: If you already added data in Guest mode, signing in later will keep your data (it links your account).';
+
+    gate.appendChild(h);
+    gate.appendChild(p);
+    gate.appendChild(row);
+    gate.appendChild(note);
+
+    banner.insertBefore(gate, banner.firstChild);
+  }
+
+  const googleBtn=document.getElementById('softGateGoogleBtn');
+  const guestBtn=document.getElementById('softGateGuestBtn');
+
+  if(googleBtn) googleBtn.onclick=startGoogleSignIn;
+
+  if(guestBtn) guestBtn.onclick = ()=>{
+    const key='lifesafe_guest_confirmed';
+    if(localStorage.getItem(key)==='1'){
+      set2('Guest mode active. You can sign in anytime.');
+      return;
+    }
+    const ok = window.confirm('Continue as Guest?
+
+Data will be device-only until you sign in with Google. If you clear browser data you may lose access.
+
+You can sign in later to link and keep your data.');
+    if(ok){
+      localStorage.setItem(key,'1');
+      set2('Guest mode active. You can sign in anytime.');
+    }
+  };
+}
 
   if(!gate){
     gate = document.createElement('div');
@@ -314,9 +332,7 @@ let appCheckReady = Promise.resolve(true);
     db=firebase.firestore();
     storage=firebase.storage();
 
-    // Finish email-link sign-in if present, then handle Google redirect
-    completeEmailLinkIfPresent();
-    handleRedirectResult();
+    // Finish email-link sign-in if present, then handle Google redirect    handleRedirectResult();
 
     auth.onAuthStateChanged(async (user)=>{
       if(user){
