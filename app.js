@@ -182,23 +182,41 @@ function setAuthUI(user){
     if(!window.firebase) throw new Error('Firebase SDK not loaded');
     firebase.initializeApp(cfg);
 
-    // Firebase App Check (reCAPTCHA v3) — deferred for iPhone Safari stability
+    // Firebase App Check (reCAPTCHA v3) — deferred for iPhone Safari stability (v1.18b)
 // Add ?nocaptcha=1 to URL to bypass App Check during troubleshooting.
+let appCheckReady = Promise.resolve(true);
 (function(){
+  let bypass=false;
   try{
     const qp = new URLSearchParams(window.location.search || '');
-    if(qp.get('nocaptcha') === '1') return;
+    bypass = (qp.get('nocaptcha') === '1');
   }catch(e){}
-  // Defer activation until after first render and auth init
-  setTimeout(()=>{
-    try{
-      if(firebase && firebase.appCheck){
-        firebase.appCheck().activate('6LeIFj4sAAAAAOzs2S8Cd3UA9BNkkeig8m4QZQcy', true);
+  if(bypass){
+    appCheckReady = Promise.resolve(true);
+    return;
+  }
+  appCheckReady = new Promise((resolve)=>{
+    setTimeout(async ()=>{
+      try{
+        if(firebase && firebase.appCheck){
+          firebase.appCheck().activate('6LeIFj4sAAAAAOzs2S8Cd3UA9BNkkeig8m4QZQcy', true);
+          // Ensure a token is minted before we start uploads (required when enforcement is ON)
+          try{
+            const tok = await firebase.appCheck().getToken(true);
+            if(tok && tok.token){
+              resolve(true);
+              return;
+            }
+          }catch(e){ /* fall through */ }
+        }
+        resolve(true);
+      }catch(e){
+        console.warn('App Check not active', e);
+        try{ set2('App Check warning: ' + (e && e.message ? e.message : String(e))); }catch(_) {}
+        resolve(true);
       }
-    }catch(e){
-      console.warn('App Check not active', e);
-    }
-  }, 1200);
+    }, 1200);
+  });
 })();
     auth=firebase.auth();
     db=firebase.firestore();
@@ -515,9 +533,11 @@ function setAuthUI(user){
   }
 
   Object.keys(refs).forEach(k=>{
-    refs[k].addBtn.addEventListener('click', ()=>{
+    refs[k].addBtn.addEventListener('click', async ()=>{
       if(k==='uploads'){
         if(!uid) return alert('Waiting for sign-in…');
+        try{ set2('Preparing secure upload…'); }catch(e){}
+        try{ await appCheckReady; }catch(e){}
         refs.uploads.file.value=''; refs.uploads.file.click();
       }else{
         openModal('add');
@@ -556,6 +576,7 @@ function setAuthUI(user){
       },
       (err)=>{
         docRef.set({status:'error', error:(err&&err.message)?err.message:String(err)},{merge:true}).catch(()=>{});
+        set2('Upload failed: '+(err&&err.message?err.message:String(err)));
         alert('Upload failed: '+(err&&err.message?err.message:String(err)));
       },
       async ()=>{
