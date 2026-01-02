@@ -195,7 +195,7 @@ function setAuthUI(user){
   }
 
   gate.style.display='block';
-  gate.innerHTML='';
+  gate.innerHTML='<div style="font-weight:600;margin-bottom:.25rem">Loading sign-in…</div><div style="color:#475467;margin-bottom:.6rem">You can continue as Guest now, or wait a moment for sign-in options.</div>';
 
   const h=document.createElement('h4');
   h.textContent='Sign in to store safely (recommended)';
@@ -277,7 +277,7 @@ You can sign in later to link and keep your data.');
 
     // Anonymous (default) and not confirmed: show choices
     gate.style.display='block';
-    gate.innerHTML='';
+    gate.innerHTML='<div style="font-weight:600;margin-bottom:.25rem">Loading sign-in…</div><div style="color:#475467;margin-bottom:.6rem">You can continue as Guest now, or wait a moment for sign-in options.</div>';
 
     const h=document.createElement('h4');
     h.textContent='Sign in to store safely (recommended)';
