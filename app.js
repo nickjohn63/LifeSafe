@@ -182,7 +182,8 @@ function setAuthUI(user){
   const gate = document.getElementById('splashGate');
   if(!gate){ proceedToApp(); return; }
 
-  const guestOK = (localStorage.getItem('lifesafe_guest_confirmed')==='1');
+  let guestOK=false;
+    try{ guestOK = (localStorage.getItem('lifesafe_guest_confirmed')==='1'); }catch(e){ guestOK=false; }
   if(user && !user.isAnonymous){
     gate.style.display='none';
     proceedToApp();
@@ -246,7 +247,7 @@ Data will be private to this device until you sign in. If you switch device or c
 
 You can sign in later to link and keep your data.');
     if(ok){
-      localStorage.setItem('lifesafe_guest_confirmed','1');
+      try{ localStorage.setItem('lifesafe_guest_confirmed','1'); }catch(e){}
       proceedToApp();
     }
   };
@@ -333,7 +334,7 @@ Data will be private to this device until you sign in. If you switch device or c
 
 You can sign in later to link and keep your data.');
       if(ok){
-        localStorage.setItem('lifesafe_guest_confirmed','1');
+        try{ localStorage.setItem('lifesafe_guest_confirmed','1'); }catch(e){}
         proceedToApp();
       }
     };
@@ -420,7 +421,7 @@ You can sign in later to link and keep your data.');
 
 
 
-  renderSplashGate(null);
+  try{ renderSplashGate(null); }catch(e){ console.warn(e); try{ proceedToApp(); }catch(_){} }
 
   set1('Firebase: initializing…');
   try{
