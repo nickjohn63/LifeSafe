@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LifeSafe • V1.15-Light</title>
+  <title>LifeSafe • V1.15a-Light</title>
   <link rel="icon" href="favicon.svg" />
-  <link rel="stylesheet" href="styles.css?v=115L" />
+  <link rel="stylesheet" href="styles.css?v=115aL" />
 </head>
 <body>
   <div id="splash" class="splash">
     <div class="logo">LifeSafe</div>
     <div class="tag">Your household hub</div>
-    <div class="ver">Version <strong>1.15</strong> • Light</div>
+    <div class="ver">Version <strong>1.15a</strong> • Light</div>
   </div>
 
   <div id="main" class="app hidden">
@@ -76,7 +76,8 @@
       <div id="uploadsContent" class="hidden">
         <div class="banner" id="uploadsBanner">
           Uploads hub (preview): files listed here are <strong>not</strong> synced yet. Firebase coming soon.
-          <div class="smallNote" id="authStatus">Signing in…</div>
+          <div class="smallNote" id="authStatus">Firebase auth: loading…</div>
+          <div class="smallNote" id="authStatus2"></div>
         </div>
         <div class="toolbar">
           <input id="filePicker" type="file" multiple class="hidden" />
@@ -137,6 +138,11 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=115L"></script>
+  <!-- Firebase (compat builds are more forgiving on GitHub Pages + iPhone Safari) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
+  <script>window.LIFESAFE_FIREBASE_CONFIG = {"apiKey": "AIzaSyDALDniDAfnsux6QRNFBaUL2yPSPrV3kpA", "authDomain": "lifesafe-v1-15.firebaseapp.com", "projectId": "lifesafe-v1-15", "storageBucket": "lifesafe-v1-15.firebasestorage.app", "messagingSenderId": "858805693168", "appId": "1:858805693168:web:788a7dcefa10514378b035"};</script>
+  <script src="app.js?v=115aL"></script>
 </body>
 </html>

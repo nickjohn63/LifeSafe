@@ -1,8 +1,11 @@
-# LifeSafe v1.15-Light
+# LifeSafe v1.15a-Light
 
-This version adds **Firebase Anonymous Authentication** only.
-Cloud storage for uploads comes next.
+This is a compatibility fix so Firebase Anonymous Auth reliably shows on GitHub Pages / iPhone Safari.
 
-- Records remain stored locally (same localStorage key as v1.14a)
-- Uploads are still metadata-only (not synced yet)
-- Check Uploads banner for sign-in status
+## What you should see
+Go to Uploads tab:
+- "Firebase auth: initializing…"
+- then "Signed in (anonymous). Device ID: XXXXXXXX…"
+
+If you still don’t see it:
+- You likely uploaded into a subfolder (must be repo root), or browser cache.
