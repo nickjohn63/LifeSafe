@@ -79,3 +79,19 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-ap
   border:1px solid #d0d5dd; border-radius:.55rem; padding:.5rem .6rem;
 }
 .authPanel .btn{white-space:nowrap}
+
+
+/* Soft gate (v1.19) */
+.softGate{
+  margin-top:.6rem;
+  padding:.75rem;
+  border:1px solid #d0d5dd;
+  border-radius:.75rem;
+  background:#f8fafc;
+}
+.softGate h4{margin:0 0 .25rem 0; font-size:1rem;}
+.softGate p{margin:.15rem 0 .6rem 0; color:#475467; font-size:.95rem;}
+.softGate .row{display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;}
+.softGate .row input{flex:1 1 210px;}
+.softGate .tinyNote{margin-top:.5rem; font-size:.85rem; color:#667085;}
+.softGate .btn.secondary{opacity:.85}

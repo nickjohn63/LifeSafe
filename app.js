@@ -175,6 +175,98 @@ function setAuthUI(user){
     set2('Signed in. Account: ' + who);
   }
 }
+// Soft gate: encourage sign-in first (v1.19)
+function renderSoftGate(user){
+  // Show only when user is anonymous (guest mode)
+  const banner = document.getElementById('uploadsBanner');
+  if(!banner) return;
+
+  let gate = document.getElementById('softGate');
+  if(user && !user.isAnonymous){
+    if(gate) gate.remove();
+    return;
+  }
+
+  if(!gate){
+    gate = document.createElement('div');
+    gate.id = 'softGate';
+    gate.className = 'softGate';
+
+    const h = document.createElement('h4');
+    h.textContent = 'Sign in to store safely (recommended)';
+    const p = document.createElement('p');
+    p.textContent = 'If you continue as Guest, uploads are private to this device. Sign in now to use across devices and avoid losing access.';
+
+    const row1 = document.createElement('div');
+    row1.className = 'row';
+
+    const email = document.createElement('input');
+    email.id = 'softGateEmail';
+    email.type = 'email';
+    email.placeholder = 'Email for sign-in link';
+    email.autocomplete = 'email';
+
+    const emailBtn = document.createElement('button');
+    emailBtn.className = 'btn ghost';
+    emailBtn.id = 'softGateEmailBtn';
+    emailBtn.textContent = 'Send sign-in link';
+
+    const googleBtn = document.createElement('button');
+    googleBtn.className = 'btn ghost';
+    googleBtn.id = 'softGateGoogleBtn';
+    googleBtn.textContent = 'Sign in with Google';
+
+    const guestBtn = document.createElement('button');
+    guestBtn.className = 'btn secondary';
+    guestBtn.id = 'softGateGuestBtn';
+    guestBtn.textContent = 'Continue as Guest';
+
+    row1.appendChild(email);
+    row1.appendChild(emailBtn);
+    row1.appendChild(googleBtn);
+    row1.appendChild(guestBtn);
+
+    const note = document.createElement('div');
+    note.className = 'tinyNote';
+    note.textContent = 'Tip: If you already uploaded in Guest mode, signing in later will keep your data (it links your account).';
+
+    gate.appendChild(h);
+    gate.appendChild(p);
+    gate.appendChild(row1);
+    gate.appendChild(note);
+
+    // Insert at top of banner
+    banner.insertBefore(gate, banner.firstChild);
+  }
+
+  const email = document.getElementById('softGateEmail');
+  const emailBtn = document.getElementById('softGateEmailBtn');
+  const googleBtn = document.getElementById('softGateGoogleBtn');
+  const guestBtn = document.getElementById('softGateGuestBtn');
+
+  if(emailBtn) emailBtn.onclick = ()=>{
+    const v = (email && email.value ? email.value : '').trim();
+    if(!v) return alert('Enter an email address first.');
+    sendEmailLink(v);
+  };
+  if(googleBtn) googleBtn.onclick = startGoogleSignIn;
+
+  // One-time confirmation if they choose Guest
+  if(guestBtn) guestBtn.onclick = ()=>{
+    const key='lifesafe_guest_confirmed';
+    if(localStorage.getItem(key)==='1'){
+      set2('Guest mode active. You can sign in anytime.');
+      return;
+    }
+    const ok = window.confirm('Continue as Guest?\n\nUploads will be private to this device. If you switch devices or clear browser data you may lose access.\n\nYou can sign in later to link and keep your data.');
+    if(ok){
+      localStorage.setItem(key,'1');
+      set2('Guest mode active. You can sign in anytime.');
+    }
+  };
+}
+
+
 
   set1('Firebase: initializing…');
   try{
@@ -232,6 +324,7 @@ let appCheckReady = Promise.resolve(true);
         localStorage.setItem('lifesafe_uid',uid);
         set1((user.isAnonymous ? 'Signed in (anonymous). ' : 'Signed in. ') + 'Device/User ID: ' + uid.slice(0,8) + '…');
         setAuthUI(user);
+        renderSoftGate(user);
         try{ await appCheckReady; }catch(e){}
         startUploadsListener();
         if(active==='uploads') renderList('uploads');
