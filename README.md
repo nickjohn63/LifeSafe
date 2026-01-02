@@ -1,11 +1,8 @@
-# LifeSafe v1.14-Light
+# LifeSafe v1.15-Light
 
-**Locked visual design:** light grey background, pastel blue header, rounded white cards, system font.
+This version adds **Firebase Anonymous Authentication** only.
+Cloud storage for uploads comes next.
 
-## New in v1.14
-- Added **Uploads** tab (preview) — pick files, we store **file metadata** (name, type, size, modified) in **LocalStorage**.
-- Each file shows a **Not synced** badge (cloud sync not yet enabled).
-- All previous tabs and features intact (records, edit/delete with warning popup, Google Calendar 10:00).
-
-## Deploy
-Upload all files to your repo root and refresh GitHub Pages.
+- Records remain stored locally (same localStorage key as v1.14a)
+- Uploads are still metadata-only (not synced yet)
+- Check Uploads banner for sign-in status

@@ -3,25 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LifeSafe • V1.14-Light</title>
+  <title>LifeSafe • V1.15-Light</title>
   <link rel="icon" href="favicon.svg" />
-  <link rel="stylesheet" href="styles.css?v=114L" />
+  <link rel="stylesheet" href="styles.css?v=115L" />
 </head>
 <body>
-  <!-- Splash -->
   <div id="splash" class="splash">
     <div class="logo">LifeSafe</div>
     <div class="tag">Your household hub</div>
-    <div class="ver">Version <strong>1.14</strong> • Light</div>
+    <div class="ver">Version <strong>1.15</strong> • Light</div>
   </div>
 
-  <!-- App -->
   <div id="main" class="app hidden">
     <header class="appbar">
-      <div class="brand">
-        <img src="favicon.svg" class="ico" alt="" />
-        <span>LifeSafe</span>
-      </div>
+      <div class="brand"><img src="favicon.svg" class="ico" alt=""/><span>LifeSafe</span></div>
       <div class="title" id="activeTitle">Home</div>
       <div></div>
     </header>
@@ -29,79 +24,60 @@
     <nav id="tabs" class="tabs"></nav>
 
     <section class="content">
-      <!-- Home -->
       <div id="homeContent">
         <div class="banner hidden" id="homeBanner"></div>
-        <div class="toolbar">
-          <button class="btn primary" id="addBtnHome">+ Add Record</button>
-        </div>
+        <div class="toolbar"><button class="btn primary" id="addBtnHome">+ Add Record</button></div>
         <div id="homeHint" class="hint">Start by adding your first record.</div>
         <div id="homeList" class="list"></div>
       </div>
 
-      <!-- Vehicles -->
       <div id="vehiclesContent" class="hidden">
         <div class="banner hidden" id="vehiclesBanner"></div>
-        <div class="toolbar">
-          <button class="btn primary" id="addBtnVehicles">+ Add Record</button>
-        </div>
+        <div class="toolbar"><button class="btn primary" id="addBtnVehicles">+ Add Record</button></div>
         <div id="vehiclesHint" class="hint">Add MOT, insurance, tax, etc.</div>
         <div id="vehiclesList" class="list"></div>
       </div>
 
-      <!-- Health -->
       <div id="healthContent" class="hidden">
         <div class="banner hidden" id="healthBanner"></div>
-        <div class="toolbar">
-          <button class="btn primary" id="addBtnHealth">+ Add Record</button>
-        </div>
+        <div class="toolbar"><button class="btn primary" id="addBtnHealth">+ Add Record</button></div>
         <div id="healthHint" class="hint">Add prescriptions, checkups, etc.</div>
         <div id="healthList" class="list"></div>
       </div>
 
-      <!-- Finance -->
       <div id="financeContent" class="hidden">
         <div class="banner hidden" id="financeBanner"></div>
-        <div class="toolbar">
-          <button class="btn primary" id="addBtnFinance">+ Add Record</button>
-        </div>
+        <div class="toolbar"><button class="btn primary" id="addBtnFinance">+ Add Record</button></div>
         <div id="financeHint" class="hint">Add insurance, bills, cards, etc.</div>
         <div id="financeList" class="list"></div>
       </div>
 
-      <!-- IDs & Docs -->
       <div id="idsContent" class="hidden">
         <div class="banner hidden" id="idsBanner"></div>
-        <div class="toolbar">
-          <button class="btn primary" id="addBtnIds">+ Add Record</button>
-        </div>
+        <div class="toolbar"><button class="btn primary" id="addBtnIds">+ Add Record</button></div>
         <div id="idsHint" class="hint">Add passport, licence, certificates, etc.</div>
         <div id="idsList" class="list"></div>
       </div>
 
-      <!-- Pets -->
       <div id="petsContent" class="hidden">
         <div class="banner hidden" id="petsBanner"></div>
-        <div class="toolbar">
-          <button class="btn primary" id="addBtnPets">+ Add Record</button>
-        </div>
+        <div class="toolbar"><button class="btn primary" id="addBtnPets">+ Add Record</button></div>
         <div id="petsHint" class="hint">Add vaccinations, insurance, vet, etc.</div>
         <div id="petsList" class="list"></div>
       </div>
 
-      <!-- Other -->
       <div id="otherContent" class="hidden">
         <div class="banner hidden" id="otherBanner"></div>
-        <div class="toolbar">
-          <button class="btn primary" id="addBtnOther">+ Add Record</button>
-        </div>
+        <div class="toolbar"><button class="btn primary" id="addBtnOther">+ Add Record</button></div>
         <div id="otherHint" class="hint">Add anything else you want to track.</div>
         <div id="otherList" class="list"></div>
       </div>
 
-      <!-- Uploads -->
       <div id="uploadsContent" class="hidden">
-        <div class="banner" id="uploadsBanner">Uploads hub (preview): files listed here are <strong>not</strong> synced yet. Firebase coming soon.</div>
+        <div class="banner" id="uploadsBanner">
+          Uploads hub (preview): files listed here are <strong>not</strong> synced yet. Firebase coming soon.
+          <div class="smallNote" id="authStatus">Signing in…</div>
+        </div>
         <div class="toolbar">
           <input id="filePicker" type="file" multiple class="hidden" />
           <button class="btn primary" id="addBtnUploads">+ Add Document</button>
@@ -112,7 +88,6 @@
     </section>
   </div>
 
-  <!-- Detail view -->
   <div id="detail" class="detail hidden">
     <header class="appbar">
       <button id="backBtn" class="btn ghost">← Back</button>
@@ -127,7 +102,6 @@
     </div>
   </div>
 
-  <!-- Modal -->
   <div id="overlay" class="overlay hidden"></div>
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modalHeader">
@@ -148,7 +122,6 @@
     </div>
   </div>
 
-  <!-- Delete Confirm Popup -->
   <div id="confirmOverlay" class="overlay hidden"></div>
   <div id="confirmPopup" class="confirm hidden" role="dialog" aria-modal="true">
     <div class="confirmHeader">
@@ -164,6 +137,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=114L"></script>
+  <script type="module" src="app.js?v=115L"></script>
 </body>
 </html>
