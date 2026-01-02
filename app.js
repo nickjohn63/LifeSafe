@@ -488,6 +488,13 @@ let appCheckReady = Promise.resolve(true);
   });
 })();
     auth=firebase.auth();
+
+    // Expose minimal handlers for the splash screen fallback
+    try{
+      window.lifesafeSendEmailLink = (email)=>sendEmailLink(email);
+      window.lifesafeGoogleSignIn = ()=>startGoogleSignIn();
+      window.lifesafeAuthReady = true;
+    }catch(e){}
     db=firebase.firestore();
     storage=firebase.storage();
 
