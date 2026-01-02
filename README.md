@@ -1,11 +1,8 @@
-# LifeSafe v1.15a-Light
+# LifeSafe v1.15b-Light
 
-This is a compatibility fix so Firebase Anonymous Auth reliably shows on GitHub Pages / iPhone Safari.
+Fixes the "stuck on splash" issue.
+- No module scripts
+- App ALWAYS shows even if Firebase fails
+- Uploads banner shows Firebase auth status or a clear error
 
-## What you should see
-Go to Uploads tab:
-- "Firebase auth: initializing…"
-- then "Signed in (anonymous). Device ID: XXXXXXXX…"
-
-If you still don’t see it:
-- You likely uploaded into a subfolder (must be repo root), or browser cache.
+Next: v1.16 = real file upload to Firebase Storage + Firestore metadata.
