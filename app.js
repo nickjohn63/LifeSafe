@@ -29,45 +29,7 @@
 
 
 // --- Secure login helpers (Google + Email link) + App Check (v1.18) ---
-function ensureAuthPanel(){
-  const banner=document.getElementById('uploadsBanner');
-  if(!banner) return null;
-  let panel=document.getElementById('authPanel');
-  if(panel) return panel;
-
-  panel=document.createElement('div');
-  panel.id='authPanel';
-  panel.className='authPanel';
-
-  const googleBtn=document.createElement('button');
-  googleBtn.className='btn ghost';
-  googleBtn.id='googleSignInBtn';
-  googleBtn.textContent='Sign in with Google';
-
-  const email=document.createElement('input');
-  email.id='emailInput';
-  email.type='email';
-  email.placeholder='Email for sign-in link';
-  email.autocomplete='email';
-
-  const emailBtn=document.createElement('button');
-  emailBtn.className='btn ghost';
-  emailBtn.id='emailLinkBtn';
-  emailBtn.textContent='Send sign-in link';
-
-  const signOutBtn=document.createElement('button');
-  signOutBtn.className='btn danger';
-  signOutBtn.id='signOutBtn';
-  signOutBtn.textContent='Sign out';
-
-  panel.appendChild(googleBtn);
-  panel.appendChild(email);
-  panel.appendChild(emailBtn);
-  panel.appendChild(signOutBtn);
-
-  banner.appendChild(panel);
-  return panel;
-}
+function ensureAuthPanel(){ /* removed in v1.19a */ }
 
 function actionUrl(){
   // keep same path, strip query params
@@ -147,7 +109,7 @@ async function doSignOut(){
 }
 
 function setAuthUI(user){
-  const panel=ensureAuthPanel();
+  const panel=
   if(!panel) return;
   const googleBtn=document.getElementById('googleSignInBtn');
   const emailInput=document.getElementById('emailInput');
@@ -175,17 +137,8 @@ function setAuthUI(user){
     set2('Signed in. Account: ' + who);
   }
 }
-// Soft gate: encourage sign-in first (v1.19)
-function renderSoftGate(user){
-  // Show only when user is anonymous (guest mode)
-  const banner = document.getElementById('uploadsBanner');
-  if(!banner) return;
-
-  let gate = document.getElementById('softGate');
-  if(user && !user.isAnonymous){
-    if(gate) gate.remove();
-    return;
-  }
+  // v1.19a: removed sign-in panel from Uploads (fresh start)
+  function renderSoftGate(user){ /* intentionally blank */ }
 
   if(!gate){
     gate = document.createElement('div');
@@ -324,7 +277,7 @@ let appCheckReady = Promise.resolve(true);
         localStorage.setItem('lifesafe_uid',uid);
         set1((user.isAnonymous ? 'Signed in (anonymous). ' : 'Signed in. ') + 'Device/User ID: ' + uid.slice(0,8) + '…');
         setAuthUI(user);
-        renderSoftGate(user);
+        
         try{ await appCheckReady; }catch(e){}
         startUploadsListener();
         if(active==='uploads') renderList('uploads');
