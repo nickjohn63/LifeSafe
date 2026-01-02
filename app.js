@@ -179,16 +179,38 @@ function setAuthUI(user){
 }
   // Soft gate on Splash: choose sign-in before entering (v1.21)
   function renderSplashGate(user){
-  const gate = document.getElementById('splashGate');
-  if(!gate){ proceedToApp(); return; }
+  // v1.21e: splash gate HTML is static in index.html; just wire up auth buttons when ready
+  const emailBtn=document.getElementById('splashEmailBtn');
+  const googleBtn=document.getElementById('splashGoogleBtn');
+  const email=document.getElementById('splashEmail');
+  const note=document.getElementById('splashNote');
+  if(!emailBtn || !googleBtn) return;
 
-  let guestOK=false;
-    try{ guestOK = (localStorage.getItem('lifesafe_guest_confirmed')==='1'); }catch(e){ guestOK=false; }
-  if(user && !user.isAnonymous){
-    gate.style.display='none';
-    proceedToApp();
-    return;
-  }
+  // If already signed in (non-anon), auto enter
+  try{
+    if(user && !user.isAnonymous){
+      proceedToApp();
+      return;
+    }
+  }catch(e){}
+
+  // enable buttons
+  emailBtn.disabled=false; emailBtn.style.opacity='1';
+  googleBtn.disabled=false; googleBtn.style.opacity='1';
+  if(note) note.textContent='Sign in now (recommended), or Continue as Guest.';
+
+  emailBtn.onclick=()=>{
+    const v=(email && email.value ? email.value : '').trim();
+    if(!v) return alert('Enter an email address first.');
+    sendEmailLink(v);
+  };
+  googleBtn.onclick=startGoogleSignIn;
+
+  // If guest already confirmed earlier, enter app automatically
+  try{
+    if(localStorage.getItem('lifesafe_guest_confirmed')==='1') proceedToApp();
+  }catch(e){}
+}
   if(guestOK){
     gate.style.display='none';
     proceedToApp();

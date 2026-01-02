@@ -3,16 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LifeSafe • V1.21d-Light</title>
+  <title>LifeSafe • V1.21e-Light</title>
   <link rel="icon" href="favicon.svg" />
-  <link rel="stylesheet" href="styles.css?v=121dL" />
+  <link rel="stylesheet" href="styles.css?v=121eL" />
 </head>
 <body>
   <div id="splash" class="splash">
     <div class="logo">LifeSafe</div>
     <div class="tag">Your household hub</div>
-    <div class="ver">Version <strong>1.21d</strong> • Light</div>
-    <div id="splashGate" class="softGate" style="display:block"></div>
+    <div class="ver">Version <strong>1.21e</strong> • Light</div>
+    
+<div id="splashGate" class="softGate" style="display:block">
+  <h4>Sign in to store safely (recommended)</h4>
+  <p>Sign in before you start so your records and uploads can be accessed across devices. Or continue as Guest (device‑only) and sign in later.</p>
+  <div class="row">
+    <input id="splashEmail" type="email" placeholder="Email for sign-in link" autocomplete="email" />
+    <button id="splashEmailBtn" class="btn ghost" type="button">Send sign-in link</button>
+    <button id="splashGoogleBtn" class="btn ghost" type="button">Sign in with Google</button>
+    <button id="splashGuestBtn" class="btn secondary" type="button">Continue as Guest</button>
+  </div>
+  <div class="tinyNote" id="splashNote">If buttons are greyed out, wait a moment for sign-in to finish loading. Guest works immediately.</div>
+</div>
+<script>
+  // Minimal splash fallback (runs before app.js)
+  (function(){
+    function proceed(){ try{ document.getElementById('splash').classList.add('hidden'); document.getElementById('main').classList.remove('hidden'); }catch(e){} }
+    function guest(){
+      var ok = confirm('Continue as Guest?\n\nData will be private to this device until you sign in. If you switch device or clear browser data you may lose access.\n\nYou can sign in later to link and keep your data.');
+      if(ok){
+        try{ localStorage.setItem('lifesafe_guest_confirmed','1'); }catch(e){}
+        proceed();
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      var g=document.getElementById('splashGuestBtn');
+      if(g) g.addEventListener('click', guest);
+      // Default: disable sign-in buttons until app.js hooks them up
+      var eb=document.getElementById('splashEmailBtn'), gb=document.getElementById('splashGoogleBtn');
+      if(eb){ eb.disabled=true; eb.style.opacity='0.6'; }
+      if(gb){ gb.disabled=true; gb.style.opacity='0.6'; }
+    });
+  })();
+</script>
 </div>
 
   <div id="main" class="app hidden">
@@ -147,6 +179,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
   <script>window.LIFESAFE_FIREBASE_CONFIG = {"apiKey": "AIzaSyDALDniDAfnsux6QRNFBaUL2yPSPrV3kpA", "authDomain": "lifesafe-v1-15.firebaseapp.com", "projectId": "lifesafe-v1-15", "storageBucket": "lifesafe-v1-15.firebasestorage.app", "messagingSenderId": "858805693168", "appId": "1:858805693168:web:788a7dcefa10514378b035"};</script>
-  <script src="app.js?v=121dL"></script>
+  <script src="app.js?v=121eL"></script>
 </body>
 </html>
