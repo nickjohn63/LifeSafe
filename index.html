@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LifeSafe • V1.15b-Light</title>
+  <title>LifeSafe • V1.16-Light</title>
   <link rel="icon" href="favicon.svg" />
-  <link rel="stylesheet" href="styles.css?v=115bL" />
+  <link rel="stylesheet" href="styles.css?v=116L" />
 </head>
 <body>
   <div id="splash" class="splash">
     <div class="logo">LifeSafe</div>
     <div class="tag">Your household hub</div>
-    <div class="ver">Version <strong>1.15b</strong> • Light</div>
+    <div class="ver">Version <strong>1.16</strong> • Light</div>
   </div>
 
   <div id="main" class="app hidden">
@@ -75,7 +75,7 @@
 
       <div id="uploadsContent" class="hidden">
         <div class="banner" id="uploadsBanner">
-          Uploads hub (preview): files listed here are <strong>not</strong> synced yet. Firebase coming soon.
+          Uploads hub: stored securely in Firebase (your device only).
           <div class="smallNote" id="authStatus">Firebase auth: loading…</div>
           <div class="smallNote" id="authStatus2"></div>
         </div>
@@ -138,11 +138,13 @@
     </div>
   </div>
 
-  <!-- Firebase compat builds -->
+  <!-- Firebase compat builds (reliable on GitHub Pages + iPhone Safari) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
   <script>window.LIFESAFE_FIREBASE_CONFIG = {"apiKey": "AIzaSyDALDniDAfnsux6QRNFBaUL2yPSPrV3kpA", "authDomain": "lifesafe-v1-15.firebaseapp.com", "projectId": "lifesafe-v1-15", "storageBucket": "lifesafe-v1-15.firebasestorage.app", "messagingSenderId": "858805693168", "appId": "1:858805693168:web:788a7dcefa10514378b035"};</script>
-  <script src="app.js?v=115bL"></script>
+  <script src="app.js?v=116L"></script>
 </body>
 </html>
